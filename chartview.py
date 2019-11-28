@@ -23,9 +23,8 @@ class ChartView(QChartView):
                 self.chart().scroll(-x, y)
             self.x_old = event.x()
             self.y_old = event.y()
-            return
         else:
-            self.tooltip(event.pos(), True)
+            self.tooltip(event.pos(),True)
 
     #
     def mousePressEvent(self, event: QMouseEvent):
@@ -44,9 +43,12 @@ class ChartView(QChartView):
         print("hover")
         if not self.callout:
             self.callout = Callout(self.chart())
-
+        print("end")
         if state:
             self.callout.set_text("X:{} Y:{}".format(point.x(), point.y()))
+            # self.callout.setAnchor(point)
+            # self.callout.setZValue(11)
+            # self.callout.updateGeometry()
             self.callout.show()
         else:
             self.callout.hide()
