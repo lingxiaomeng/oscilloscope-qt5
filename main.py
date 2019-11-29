@@ -42,6 +42,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.label_1 = QLabel("Start index")
         self.label_2 = QLabel("End index")
         self.rang_btn = QPushButton("Enter")
+        self.check_data1 = QCheckBox("Data 1")
+        self.check_data2 = QCheckBox("Data 2")
 
         self.main_layout.addWidget(self.stop_button, 5, 1, 1, 1)
         self.main_layout.addWidget(self.start_range_input, 2, 1, 1, 1)
@@ -49,6 +51,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_layout.addWidget(self.label_1, 1, 1, 1, 1)
         self.main_layout.addWidget(self.label_2, 1, 2, 1, 1)
         self.main_layout.addWidget(self.rang_btn, 2, 3, 1, 1)
+        self.main_layout.addWidget(self.check_data1, 3, 1, 1, 1)
+        self.main_layout.addWidget(self.check_data2, 4, 1, 1, 1)
 
         self.init_chart()
         self.timer.timeout.connect(self.timer_slot)
@@ -56,6 +60,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart_view.setFixedSize(900, 700)
         self.stop_button.clicked.connect(self.stop_slot)
         self.rang_btn.clicked.connect(self.change_range)
+        self.check_data1.stateChanged.connect(self.change_data)
+        self.check_data2.stateChanged.connect(self.change_data)
 
     def init_chart(self):
         self.chart.addSeries(self.series_1)
@@ -77,6 +83,16 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_layout.addWidget(self.chart_view, 0, 0, 35, 1)
         self.chart.legend().setVisible(True)
         self.chart.legend().setAlignment(Qt.AlignBottom)
+
+    def change_data(self):
+        if not self.check_data1.isChecked():
+            self.series_1.setVisible(False)
+        else:
+            self.series_1.setVisible(True)
+        if not self.check_data2.isChecked():
+            self.series_2.setVisible(False)
+        else:
+            self.series_2.setVisible(True)
 
     def change_range(self):
         start = self.start_range_input.text()
