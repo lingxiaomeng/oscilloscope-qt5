@@ -3,12 +3,11 @@ import math
 import sys
 from math import sin, cos
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from PyQt5.Qt import *
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 
-from callout import Callout
 from chartview import ChartView
 
 
@@ -32,9 +31,8 @@ class MainUi(QtWidgets.QMainWindow):
         # self.setAttribute(QtCore.Qt.WA_TranslucentBackground)  # 设置窗口背景透明
         # self.setWindowFlag(QtCore.Qt.FramelessWindowHint)  # 隐藏边框
         self.main_layout.setSpacing(5)  # 去除缝隙
-
         self.chart = QChart()
-        self.chart_view = ChartView()
+        self.chart_view = ChartView(ui=self)
         self.series_1 = QLineSeries()
         self.series_2 = QLineSeries()
         self.stop_button = QPushButton("stop")
@@ -57,10 +55,13 @@ class MainUi(QtWidgets.QMainWindow):
         self.timer.start(20)
         self.chart_view.setFixedSize(900, 700)
         self.stop_button.clicked.connect(self.stop_slot)
+        self.rang_btn.clicked.connect(self.change_range)
 
     def init_chart(self):
         self.chart.addSeries(self.series_1)
         self.chart.addSeries(self.series_2)
+        self.series_1.setName("Data 1")
+        self.series_2.setName("Data 2")
         self.chart.createDefaultAxes()
         self.chart.axisX().setRange(self.start_range, self.end_range)
         self.chart.axisY().setRange(-15, 15)
@@ -73,17 +74,25 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart.axisY().setGridLineVisible(False)
         self.chart_view.setRenderHint(QPainter.Antialiasing)
         self.chart_view.setChart(self.chart)
-        self.main_layout.addWidget(self.chart_view, 0, 0, 7, 1)
+        self.main_layout.addWidget(self.chart_view, 0, 0, 35, 1)
+        self.chart.legend().setVisible(True)
+        self.chart.legend().setAlignment(Qt.AlignBottom)
 
-        self.setMouseTracking(True)
-        self.chart.setAcceptHoverEvents(True)
-        # self.series_1.clicked.connect(self.keep_callout)
-        # self.series_1.hovered.connect(self.tooltip)
-        #
-        # self.series_2.clicked.connect(self.keep_callout)
-        # self.series_2.hovered.connect(self.keep_callout)
-
-
+    def change_range(self):
+        start = self.start_range_input.text()
+        end = self.end_range_input.text()
+        try:
+            start = int(start)
+            end = int(end)
+            start = 0 if start < 0 else start
+            end = len(self.original_data_1) - 1 if end >= len(self.original_data_1) else end
+            data1 = self.original_data_1[start:end]
+            data2 = self.original_data_2[start:end]
+            self.series_1.replace(data1)
+            self.series_2.replace(data2)
+            self.chart.axisX().setRange(start, end)
+        except ValueError:
+            print("value Error")
 
     def timer_slot(self):
         self.update_data()
@@ -93,15 +102,17 @@ class MainUi(QtWidgets.QMainWindow):
             self.end_range = self.count
             self.start_range = self.end_range - 100
             self.is_stop = False
+            data1 = self.original_data_1[self.start_range:self.end_range]
+            data2 = self.original_data_2[self.start_range:self.end_range]
+
+            self.series_1.replace(data1)
+            self.series_2.replace(data2)
         else:
             self.is_stop = True
 
     def update_data(self):
         old_data_1 = self.series_1.pointsVector()
         old_data_2 = self.series_2.pointsVector()
-
-        # data_1 = list()
-        # data_2 = list()
         data_length = len(old_data_1)
         data_1 = old_data_1
         data_2 = old_data_2

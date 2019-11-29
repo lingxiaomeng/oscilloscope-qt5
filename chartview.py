@@ -1,17 +1,31 @@
-from PyQt5.QtChart import QChartView
+# coding:utf-8
 from PyQt5.Qt import Qt
-from PyQt5.QtCore import QPoint
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtChart import QChartView
+from PyQt5.QtGui import QMouseEvent, QFont
+from PyQt5.QtWidgets import QLabel, QLayout, QGridLayout, QHBoxLayout
 
-from callout import Callout
+
+# from main import MainUi
 
 
 class ChartView(QChartView):
-    def __init__(self, *__args):
+    def __init__(self, *__args, ui):
         super().__init__(*__args)
+        self.ui = ui
         self.is_clicking = False
         self.x_old, self.y_old = 0, 0
-        self.callout = None
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        self.xy_label = QLabel("")
+        self.callout = QLabel("")
+
+        self.callout.setFont(QFont("Microsoft YaHei", 10, QFont.Bold, True))
+        self.callout.setGeometry(0, 0, 0, 0)
+        self.xy_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold, True))
+        self.xy_label.setGeometry(350, 660, 300, 20)
+
+        self.layout.addChildWidget(self.callout)
+        self.layout.addChildWidget(self.xy_label)
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.is_clicking:
@@ -24,12 +38,30 @@ class ChartView(QChartView):
             self.x_old = event.x()
             self.y_old = event.y()
         else:
-            self.tooltip(event.pos(),True)
+            x = event.x()
+            y = event.y()
+            x_max = (self.chart().axisX().max())
+            x_min = (self.chart().axisX().min())
 
-    #
+            y_max = (self.chart().axisY().max())
+            y_min = (self.chart().axisY().min())
+
+            index = int((x - 90) / (765 / (x_max - x_min)) + x_min)
+            y = (y - 35) / (590 / (y_max - y_min))
+            y = y_max - y
+            if index < len(self.ui.original_data_1):
+                y1 = self.ui.original_data_1[index].y()
+                y2 = self.ui.original_data_2[index].y()
+                if abs(y1 - y) < 5 or abs(y2 - y) < 5 and 85 < x < 856:
+                    self.callout.setText("    x:%d, y1:%.4f, y2:%.4f" % (int(index), y1, y2))
+                    self.xy_label.setText("x:%d, y1:%.8f, y2:%.8f" % (int(index), y1, y2))
+                    self.callout.setGeometry(event.x(), event.y(), 220, 20)
+                else:
+                    self.callout.setText("")
+                    self.xy_label.setText("")
+
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() and event.button() == Qt.LeftButton:
-            print('{} {}'.format(event.x(), event.y()))
             self.is_clicking = True
         elif event.button() and event.button() == Qt.RightButton:
             self.chart().zoomReset()
@@ -38,17 +70,4 @@ class ChartView(QChartView):
         if self.is_clicking:
             self.x_old, self.y_old = 0, 0
             self.is_clicking = False
-
-    def tooltip(self, point: QPoint, state: bool):
-        print("hover")
-        if not self.callout:
-            self.callout = Callout(self.chart())
-        print("end")
-        if state:
-            self.callout.set_text("X:{} Y:{}".format(point.x(), point.y()))
-            # self.callout.setAnchor(point)
-            # self.callout.setZValue(11)
-            # self.callout.updateGeometry()
-            self.callout.show()
-        else:
-            self.callout.hide()
+        self.callout.setText("")
