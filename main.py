@@ -8,7 +8,7 @@ from PyQt5.Qt import *
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 
-from chartview import ChartView
+from chartview import ChartView1, ChartView2
 
 
 class MainUi(QtWidgets.QMainWindow):
@@ -31,11 +31,14 @@ class MainUi(QtWidgets.QMainWindow):
         # self.setAttribute(QtCore.Qt.WA_TranslucentBackground)  # 设置窗口背景透明
         # self.setWindowFlag(QtCore.Qt.FramelessWindowHint)  # 隐藏边框
         self.main_layout.setSpacing(5)  # 去除缝隙
-        self.chart = QChart()
-        self.chart_view = ChartView(ui=self)
+        self.chart1 = QChart()
+        self.chart2 = QChart()
+        self.chart_view1 = ChartView1(ui=self)
+        self.chart_view2 = ChartView2(ui=self)
+
         self.series_1 = QLineSeries()
         self.series_2 = QLineSeries()
-        self.stop_button = QPushButton("stop")
+        self.stop_button = QPushButton("STOP")
         self.timer = QTimer()
         self.start_range_input = QLineEdit()
         self.end_range_input = QLineEdit()
@@ -44,8 +47,10 @@ class MainUi(QtWidgets.QMainWindow):
         self.rang_btn = QPushButton("Enter")
         self.check_data1 = QCheckBox("Data 1")
         self.check_data2 = QCheckBox("Data 2")
+        self.save_btn = QPushButton("Save")
 
         self.main_layout.addWidget(self.stop_button, 5, 1, 1, 1)
+        self.main_layout.addWidget(self.save_btn, 5, 2, 1, 1)
         self.main_layout.addWidget(self.start_range_input, 2, 1, 1, 1)
         self.main_layout.addWidget(self.end_range_input, 2, 2, 1, 1)
         self.main_layout.addWidget(self.label_1, 1, 1, 1, 1)
@@ -57,32 +62,70 @@ class MainUi(QtWidgets.QMainWindow):
         self.init_chart()
         self.timer.timeout.connect(self.timer_slot)
         self.timer.start(20)
-        self.chart_view.setFixedSize(900, 700)
+        self.chart_view1.setFixedSize(900, 350)
+        self.chart_view2.setFixedSize(900, 350)
+
+        self.check_data1.setChecked(True)
+        self.check_data2.setChecked(True)
         self.stop_button.clicked.connect(self.stop_slot)
         self.rang_btn.clicked.connect(self.change_range)
         self.check_data1.stateChanged.connect(self.change_data)
         self.check_data2.stateChanged.connect(self.change_data)
+        self.save_btn.clicked.connect(self.save_data)
 
     def init_chart(self):
-        self.chart.addSeries(self.series_1)
-        self.chart.addSeries(self.series_2)
+        self.chart1.addSeries(self.series_1)
+        self.chart2.addSeries(self.series_2)
         self.series_1.setName("Data 1")
         self.series_2.setName("Data 2")
-        self.chart.createDefaultAxes()
-        self.chart.axisX().setRange(self.start_range, self.end_range)
-        self.chart.axisY().setRange(-15, 15)
-        self.chart.legend().hide()
-        self.chart.axisX().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
-        self.chart.axisY().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
-        self.chart.axisX().setTitleText("Time/sec")
-        self.chart.axisY().setTitleText("Speed/m")
-        self.chart.axisX().setGridLineVisible(False)
-        self.chart.axisY().setGridLineVisible(False)
-        self.chart_view.setRenderHint(QPainter.Antialiasing)
-        self.chart_view.setChart(self.chart)
-        self.main_layout.addWidget(self.chart_view, 0, 0, 35, 1)
-        self.chart.legend().setVisible(True)
-        self.chart.legend().setAlignment(Qt.AlignBottom)
+        self.chart1.createDefaultAxes()
+        self.chart1.axisX().setRange(self.start_range, self.end_range)
+        self.chart1.axisY().setRange(-15, 15)
+        self.chart1.legend().hide()
+        self.chart1.axisX().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
+        self.chart1.axisY().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
+        self.chart1.axisX().setTitleText("Time/sec")
+        self.chart1.axisY().setTitleText("Magnitude")
+        self.chart1.axisX().setGridLineVisible(False)
+        self.chart1.axisY().setGridLineVisible(False)
+
+        self.chart2.createDefaultAxes()
+        self.chart2.axisX().setRange(self.start_range, self.end_range)
+        self.chart2.axisY().setRange(-15, 15)
+        self.chart2.legend().hide()
+        self.chart2.axisX().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
+        self.chart2.axisY().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
+        self.chart2.axisX().setTitleText("Time/sec")
+        self.chart2.axisY().setTitleText("Phase")
+        self.chart2.axisX().setGridLineVisible(False)
+        self.chart2.axisY().setGridLineVisible(False)
+
+        self.chart_view1.setRenderHint(QPainter.Antialiasing)
+        self.chart_view1.setChart(self.chart1)
+
+        self.chart_view2.setRenderHint(QPainter.Antialiasing)
+        self.chart_view2.setChart(self.chart2)
+
+        self.main_layout.addWidget(self.chart_view1, 0, 0, 17, 1)
+        self.main_layout.addWidget(self.chart_view2, 17, 0, 17, 1)
+        self.chart1.legend().setVisible(True)
+        self.chart1.legend().setAlignment(Qt.AlignBottom)
+        self.chart2.legend().setVisible(True)
+        self.chart2.legend().setAlignment(Qt.AlignBottom)
+
+    def save_data(self):
+        filename = QFileDialog.getSaveFileName(self, 'save file', "", "Text Files (*.txt)")
+        if filename[0] != '':
+            f = open(filename[0], 'w')
+            f.write("data1\n")
+            for data in self.original_data_1:
+                f.write(str(data.y()) + ",")
+            f.write("\n")
+            f.write("data2\n")
+            for data in self.original_data_2:
+                f.write(str(data.y()) + ",")
+            f.write("\n")
+            f.close()
 
     def change_data(self):
         if not self.check_data1.isChecked():
@@ -106,7 +149,9 @@ class MainUi(QtWidgets.QMainWindow):
             data2 = self.original_data_2[start:end]
             self.series_1.replace(data1)
             self.series_2.replace(data2)
-            self.chart.axisX().setRange(start, end)
+            self.chart1.axisX().setRange(start, end)
+            self.chart2.axisX().setRange(start, end)
+
         except ValueError:
             print("value Error")
 
@@ -149,14 +194,10 @@ class MainUi(QtWidgets.QMainWindow):
         if data_length > 100 and not self.is_stop:
             self.start_range += 1
             self.end_range += 1
-            self.chart.axisX().setRange(self.start_range, self.end_range)
-            # self.chart.scroll(2, 0)
+            self.chart1.axisX().setRange(self.start_range, self.end_range)
+            self.chart2.axisX().setRange(self.start_range, self.end_range)
 
-    def wheelEvent(self, event: QWheelEvent):
-        if event.angleDelta().y() < 0:
-            self.chart.zoom(0.8)
-        else:
-            self.chart.zoom(1.1)
+            # self.chart.scroll(2, 0)
 
 
 def main():

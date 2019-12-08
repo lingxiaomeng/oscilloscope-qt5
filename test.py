@@ -53,7 +53,6 @@ class MainUi(QtWidgets.QMainWindow):
             maxFlag = False
             print(maxFlag)
         else:
-
             self.setGeometry(QtCore.QRect(desktop.geometry().width() / 5, desktop.geometry().height() / 5, 960, 700))
             self.setFixedSize(QSize(960, 700))
             maxFlag = True
