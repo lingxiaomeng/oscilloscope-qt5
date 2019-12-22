@@ -9,17 +9,18 @@ from PyQt5.Qt import *
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 
-from chartview import ChartView1
+from chartview import ChartView
 
 
 class MainUi(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.max_rang = 100
 
         # self.statusBar().showMessage("Ready")
         self.start_range = 0
-        self.end_range = 100
+        self.end_range = self.max_rang
         self.count = 0
         self.original_data_1 = list()
         self.original_data_2 = list()
@@ -38,8 +39,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_layout.setSpacing(0)  # 去除缝隙
         self.chart1 = QChart()
         self.chart2 = QChart()
-        self.chart_view1 = ChartView1(ui=self)
-        self.chart_view2 = ChartView1(ui=self)
+        self.chart_view1 = ChartView(ui=self)
+        self.chart_view2 = ChartView(ui=self)
         self.chart_view1.setObjectName("chart1")
         self.chart_view2.setObjectName("chart2")
 
@@ -151,6 +152,12 @@ class MainUi(QtWidgets.QMainWindow):
         # self.chart2.legend().setVisible(True)
         self.chart2.legend().setAlignment(Qt.AlignBottom)
 
+        # self.series_1.setPointLabelsClipping(True)
+        self.series_1.setPointsVisible(True)
+        self.series_2.setPointsVisible(True)
+
+
+
     def init_constellation_diagram(self):
         self.constellation_chart = QPolarChart()
         self.constellation_chart_view = QChartView()
@@ -223,24 +230,14 @@ class MainUi(QtWidgets.QMainWindow):
         phase = random.random() * 360
         if not self.is_stop:
             self.xy_label.setText("Magnitude:%.8f  Phase:%.8f" % (mag, phase))
-
-        # if rand < 0.25:
-        #     phase = 90
-        # elif rand < 0.5:
-        #     phase = 180
-        # elif rand < 0.75:
-        #     phase = 270
-        # else:
-        #     pass
-
         self.update_data(mag, phase)
 
     def stop_slot(self):
         if self.is_stop:
             self.start_action.setText('Stop')
 
-            self.end_range = self.count
-            self.start_range = self.end_range - 100
+            self.end_range = self.count if self.count > self.max_rang else self.max_rang
+            self.start_range = self.end_range - self.max_rang
             self.is_stop = False
             data1 = self.original_data_1[self.start_range:self.end_range]
             data2 = self.original_data_2[self.start_range:self.end_range]
@@ -281,7 +278,7 @@ class MainUi(QtWidgets.QMainWindow):
             self.series_1.replace(data_1)
             self.series_2.replace(data_2)
         self.count += 1
-        if data_length > 100 and not self.is_stop:
+        if data_length > self.max_rang and not self.is_stop:
             self.start_range += 1
             self.end_range += 1
             self.chart1.axisX().setRange(self.start_range, self.end_range)
