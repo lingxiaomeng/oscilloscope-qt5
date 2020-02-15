@@ -51,7 +51,7 @@ class ChartView(QChartView):
                     # print(self.callout.text())
                     self.callout.setText("    x:%d, y:%.4f" % (int(index), y1))
                     self.callout.setGeometry(x_event, y_event, 220, 20)
-                    self.ui.xy_label.setText("Magnitude:%.8f  Phase:%.8f" % (y1, y2))
+                    # self.ui.xy_label.setText("Magnitude:%.8f  Phase:%.8f" % (y1, y2))
                 else:
                     self.callout.setText("")
 

@@ -2,25 +2,28 @@
 import math
 import random
 import sys
-from math import sin, cos
+from math import sin
 
 from PyQt5 import QtWidgets
-from PyQt5.Qt import *
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
+from PyQt5.QtGui import QFont, QPainter, QIcon, QPixmap
+from PyQt5.QtWidgets import QLabel, QCheckBox, QPushButton, QLineEdit, QAction, QFileDialog
 
 from chartview import ChartView
+from configurations import Configurations
+from settingwindow import SettingWindow
 
 
 class MainUi(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.max_rang = 100
+        self.configurations = Configurations()
 
         # self.statusBar().showMessage("Ready")
-        self.start_range = 0
-        self.end_range = self.max_rang
+        # self.start_range = 0
+        # self.end_range = self.configurations.time_max_range
         self.count = 0
         self.original_data_1 = list()
         self.original_data_2 = list()
@@ -46,9 +49,9 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.series_1 = QLineSeries()
         self.series_2 = QLineSeries()
-        self.series_3 = QScatterSeries()
+        self.series_3 = QSplineSeries()
+        self.series_3_point = QScatterSeries()
         self.series_3.setName("series")
-        self.stop_button = QPushButton("STOP")
         self.timer = QTimer()
         self.start_range_input = QLineEdit()
         self.end_range_input = QLineEdit()
@@ -57,23 +60,12 @@ class MainUi(QtWidgets.QMainWindow):
         self.rang_btn = QPushButton("Enter")
         self.check_data1 = QCheckBox("Data 1")
         self.check_data2 = QCheckBox("Data 2")
-        self.xy_label = QLabel("")
-        self.xy_label.setFont(QFont("Microsoft YaHei", 10, QFont.Bold, True))
 
-        self.main_layout.addChildWidget(self.xy_label)
-        self.xy_label.setGeometry(615, 365, 350, 20)
-        # self.save_btn = QPushButton("Save")
+        self.start_btn = QPushButton("Start")
+        self.start_btn.setIcon(QIcon("start.png"))
+        self.start_btn.setGeometry(615, 500, 70, 40)
 
-        # self.main_layout.addWidget(self.stop_button, 18, 40, 1, 1)
-        # self.main_layout.addWidget(self.save_btn, 5, 2, 1, 1)
-        # self.main_layout.addWidget(self.start_range_input, 2, 40, 1, 1)
-        # self.main_layout.addWidget(self.end_range_input, 2, 41, 1, 1)
-        # self.main_layout.addWidget(self.label_1, 1, 40, 1, 1)
-        # self.main_layout.addWidget(self.label_2, 1, 41, 1, 1)
-        # self.main_layout.addWidget(self.rang_btn, 2, 42, 1, 1)
-        # self.main_layout.addWidget(self.check_data1, 3, 40, 1, 1)
-        # self.main_layout.addWidget(self.check_data2, 4, 40, 1, 1)
-
+        self.main_layout.addChildWidget(self.start_btn)
         self.init_chart()
         self.init_menu()
         self.init_constellation_diagram()
@@ -84,8 +76,8 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.check_data1.setChecked(True)
         self.check_data2.setChecked(True)
-        self.stop_button.clicked.connect(self.stop_slot)
-        self.stop_button.setObjectName("stop_btu")
+        self.start_btn.clicked.connect(self.stop_slot)
+        self.start_btn.setObjectName("start_btu")
         self.rang_btn.clicked.connect(self.change_range)
         self.check_data1.stateChanged.connect(self.change_data)
         self.check_data2.stateChanged.connect(self.change_data)
@@ -102,12 +94,14 @@ class MainUi(QtWidgets.QMainWindow):
         save_action.triggered.connect(self.save_data)
         file_menu.addAction(save_action)
         file_menu.addAction(load_action)
+        action_menu = self.menuBar().addMenu('Action')
         self.start_action = QAction("Start", self)
         option_menu = self.menuBar().addMenu('Options')
         range_action = QAction("Range", self)
         option_menu.addAction(range_action)
-        self.menuBar().addAction(self.start_action)
+        action_menu.addAction(self.start_action)
         self.start_action.triggered.connect(self.stop_slot)
+        range_action.triggered.connect(self.configuration_setting)
 
     def init_chart(self):
         self.chart1.addSeries(self.series_1)
@@ -115,8 +109,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.series_1.setName("Data 1")
         self.series_2.setName("Data 2")
         self.chart1.createDefaultAxes()
-        self.chart1.axisX().setRange(self.start_range, self.end_range)
-        self.chart1.axisY().setRange(0, 15)
+        self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        self.chart1.axisY().setRange(self.configurations.mag_min, self.configurations.mag_max)
         self.chart1.legend().hide()
         self.chart1.axisX().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
         self.chart1.axisY().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
@@ -126,8 +120,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart1.axisY().setGridLineVisible(False)
 
         self.chart2.createDefaultAxes()
-        self.chart2.axisX().setRange(self.start_range, self.end_range)
-        self.chart2.axisY().setRange(0, 360)
+        self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        self.chart2.axisY().setRange(self.configurations.phase_min, self.configurations.phase_max)
         self.chart2.legend().hide()
         self.chart2.axisX().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
         self.chart2.axisY().setTitleFont(QFont("Microsoft YaHei", 10, QFont.Normal, True))
@@ -156,8 +150,6 @@ class MainUi(QtWidgets.QMainWindow):
         self.series_1.setPointsVisible(True)
         self.series_2.setPointsVisible(True)
 
-
-
     def init_constellation_diagram(self):
         self.constellation_chart = QPolarChart()
         self.constellation_chart_view = QChartView()
@@ -167,19 +159,33 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_layout.addChildWidget(self.constellation_chart_view)
         self.constellation_chart_view.setGeometry(615, 10, 350, 350)
         self.radialAxis = QValueAxis()
-        self.radialAxis.setRange(0, 10)
+        self.radialAxis.setRange(self.configurations.mag_min, self.configurations.mag_max)
 
         self.angularAxis = QValueAxis()
         self.angularAxis.setTickCount(9)
-        self.angularAxis.setRange(0, 360)
+        self.angularAxis.setRange(self.configurations.phase_min, self.configurations.phase_max)
         self.constellation_chart.legend().setVisible(False)
-        self.series_3.setMarkerSize(6.0)
+        # self.series_3.setMarkerSize(6.0)
         self.constellation_chart.addSeries(self.series_3)
+        self.constellation_chart.addSeries(self.series_3_point)
         self.constellation_chart.addAxis(self.angularAxis, QPolarChart.PolarOrientationAngular)
         self.constellation_chart.addAxis(self.radialAxis, QPolarChart.PolarOrientationRadial)
         self.series_3.attachAxis(self.radialAxis)
         self.series_3.attachAxis(self.angularAxis)
+        self.series_3_point.attachAxis(self.radialAxis)
+        self.series_3_point.attachAxis(self.angularAxis)
         self.constellation_chart_view.setRenderHint(QPainter.Antialiasing)
+
+    def configuration_reset(self):
+        self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        self.chart1.axisY().setRange(self.configurations.mag_min, self.configurations.mag_max)
+        self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        self.chart2.axisY().setRange(self.configurations.phase_min, self.configurations.phase_max)
+
+    def configuration_setting(self):
+        setting_window = SettingWindow(self, self.configurations)
+        setting_window.show()
+        print("end")
 
     def save_data(self):
         filename = QFileDialog.getSaveFileName(self, 'save file', "", "Text Files (*.txt)")
@@ -224,41 +230,49 @@ class MainUi(QtWidgets.QMainWindow):
             print("value Error")
 
     def timer_slot(self):
-        mag = 3 * sin(math.pi * self.count / 45) + 5
+        # mag = 3 * sin(math.pi * self.count / 45) + 5
         mag = random.random() * 3 + 5
-        rand = random.random()
+        # rand = random.random()
         phase = random.random() * 360
         if not self.is_stop:
-            self.xy_label.setText("Magnitude:%.8f  Phase:%.8f" % (mag, phase))
-        self.update_data(mag, phase)
+            # self.xy_label.setText("Magnitude:%.8f  Phase:%.8f" % (mag, phase))
+            self.constellation_chart.setTitle("Magnitude:%.4f  Phase:%.4f" % (mag, phase))
+            self.update_data(mag, phase)
 
     def stop_slot(self):
         if self.is_stop:
             self.start_action.setText('Stop')
+            self.start_btn.setText('Stop')
+            self.start_btn.setIcon(QIcon("stop.png"))
 
-            self.end_range = self.count if self.count > self.max_rang else self.max_rang
-            self.start_range = self.end_range - self.max_rang
+            self.configurations.time_max = self.count if self.count > self.configurations.time_max_range else self.configurations.time_max_range
+            self.configurations.time_min = self.configurations.time_max - self.configurations.time_max_range
             self.is_stop = False
-            data1 = self.original_data_1[self.start_range:self.end_range]
-            data2 = self.original_data_2[self.start_range:self.end_range]
-            data3 = self.original_data_3[self.start_range:self.end_range]
+            data1 = self.original_data_1[self.configurations.time_min:self.configurations.time_max]
+            data2 = self.original_data_2[self.configurations.time_min:self.configurations.time_max]
+            # data3 = self.original_data_3[self.start_range:self.end_range].append(QPointF(0, 0))
 
             self.series_1.replace(data1)
             self.series_2.replace(data2)
-            self.series_3.replace(data3)
+            # self.series_3.replace(data3[-1])
 
         else:
+            self.start_btn.setIcon(QIcon("start.png"))
+            self.start_btn.setText('Start')
+
             self.start_action.setText('Start')
             self.is_stop = True
 
     def update_data(self, mag, phase):
         old_data_1 = self.series_1.pointsVector()
         old_data_2 = self.series_2.pointsVector()
-        old_data_3 = self.series_3.pointsVector()
+        data3 = list()
+        data3.append(QPoint(phase, mag))
+        data3.append(QPoint(0, 0))
         data_length = len(old_data_1)
         data_1 = old_data_1
         data_2 = old_data_2
-        data_3 = old_data_3
+
         if not self.is_stop and data_length > 200:
             data_1 = data_1[-200:-1]
             data_2 = data_2[-200:-1]
@@ -266,23 +280,24 @@ class MainUi(QtWidgets.QMainWindow):
         for i in range(1):
             point_1 = QPointF(self.count, mag)
             point_2 = QPointF(self.count, phase)
-            point_3 = QPointF(phase, mag)
+            # point_3 = QPointF(phase, mag)
             data_1.append(point_1)
             data_2.append(point_2)
-            data_3.append(point_3)
+            # data_3.append(point_3)
             self.original_data_1.append(point_1)
             self.original_data_2.append(point_2)
-            self.original_data_3.append(point_3)
+            # self.original_data_3.append(point_3)
         if not self.is_stop:
-            self.series_3.replace(data_3)
             self.series_1.replace(data_1)
             self.series_2.replace(data_2)
+            self.series_3.replace(data3)
+            self.series_3_point.replace(data3[0:1])
         self.count += 1
-        if data_length > self.max_rang and not self.is_stop:
-            self.start_range += 1
-            self.end_range += 1
-            self.chart1.axisX().setRange(self.start_range, self.end_range)
-            self.chart2.axisX().setRange(self.start_range, self.end_range)
+        if data_length > self.configurations.time_max_range and not self.is_stop:
+            self.configurations.time_min += 1
+            self.configurations.time_max += 1
+            self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+            self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
             # self.series_3.replace(data_3)
 
             # self.chart.scroll(2, 0)
@@ -291,6 +306,9 @@ class MainUi(QtWidgets.QMainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     gui = MainUi()
+    icon = QIcon("start.png")
+    # icon.addPixmap(QPixmap("my.ico"),QIcon.Normal, QIcon.Off)
+    gui.setWindowIcon(icon)
     gui.show()
     sys.exit(app.exec_())
 
