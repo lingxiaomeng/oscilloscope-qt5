@@ -1,3 +1,5 @@
+from math import inf
+
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QGridLayout, QLabel, QSpinBox, QPushButton
 
@@ -13,28 +15,28 @@ class SettingWindow(QtWidgets.QDialog):
         main_layout = QGridLayout()
         self.setLayout(main_layout)
         self.time_min = QSpinBox()
-        self.time_min.setRange(0, 1000)
+        self.time_min.setRange(0, 2147483647)
         self.time_min.setValue(0)
 
         self.time_max = QSpinBox()
-        self.time_max.setRange(0, 1000)
+        self.time_max.setRange(0, 2147483647)
         self.time_max.setValue(100)
 
         self.mag_min = QSpinBox()
-        self.mag_min.setRange(0, 1000)
+        # self.mag_min.setRange(0, 1000)
         self.mag_min.setValue(0)
 
         self.mag_max = QSpinBox()
-        self.mag_max.setRange(0, 1000)
-        self.mag_max.setValue(0)
+        # self.mag_max.setRange(0, 1000)
+        self.mag_max.setValue(10)
 
         self.phase_min = QSpinBox()
-        self.phase_min.setRange(0, 1000)
+        self.phase_min.setRange(0, 360)
         self.phase_min.setValue(0)
 
         self.phase_max = QSpinBox()
-        self.phase_max.setRange(0, 1000)
-        self.phase_max.setValue(0)
+        self.phase_max.setRange(0, 360)
+        self.phase_max.setValue(360)
 
         self.btn = QPushButton("OK")
 

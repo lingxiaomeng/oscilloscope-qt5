@@ -10,6 +10,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPixmap
 from PyQt5.QtWidgets import QLabel, QCheckBox, QPushButton, QLineEdit, QAction, QFileDialog
 
+from callout import Callout
 from chartview import ChartView
 from configurations import Configurations
 from settingwindow import SettingWindow
@@ -20,6 +21,8 @@ class MainUi(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.configurations = Configurations()
+        self.m_tooltip = None
+        self.m_callouts = list()
 
         # self.statusBar().showMessage("Ready")
         # self.start_range = 0
@@ -42,8 +45,9 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_layout.setSpacing(0)  # 去除缝隙
         self.chart1 = QChart()
         self.chart2 = QChart()
-        self.chart_view1 = ChartView(ui=self)
-        self.chart_view2 = ChartView(ui=self)
+        self.chart_view1 = ChartView(chart=self.chart1)
+        self.chart_view2 = ChartView(chart=self.chart2)
+
         self.chart_view1.setObjectName("chart1")
         self.chart_view2.setObjectName("chart2")
 
@@ -86,6 +90,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.stylesheet = file.read()
         # print(self.stylesheet)
         self.setStyleSheet(self.stylesheet)
+        self.setMouseTracking(True)
 
     def init_menu(self):
         file_menu = self.menuBar().addMenu('File')
@@ -96,16 +101,16 @@ class MainUi(QtWidgets.QMainWindow):
         file_menu.addAction(load_action)
         action_menu = self.menuBar().addMenu('Action')
         self.start_action = QAction("Start", self)
-        option_menu = self.menuBar().addMenu('Options')
-        range_action = QAction("Range", self)
-        option_menu.addAction(range_action)
+        # option_menu = self.menuBar().addMenu('Options')
+        range_action = QAction("Settings", self)
+        file_menu.addAction(range_action)
         action_menu.addAction(self.start_action)
         self.start_action.triggered.connect(self.stop_slot)
         range_action.triggered.connect(self.configuration_setting)
 
     def init_chart(self):
-        self.chart1.addSeries(self.series_1)
-        self.chart2.addSeries(self.series_2)
+        self.chart_view1.addSeries(self.series_1)
+        self.chart_view2.addSeries(self.series_2)
         self.series_1.setName("Data 1")
         self.series_2.setName("Data 2")
         self.chart1.createDefaultAxes()
@@ -131,10 +136,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart2.axisY().setGridLineVisible(False)
 
         self.chart_view1.setRenderHint(QPainter.Antialiasing)
-        self.chart_view1.setChart(self.chart1)
 
         self.chart_view2.setRenderHint(QPainter.Antialiasing)
-        self.chart_view2.setChart(self.chart2)
 
         self.main_layout.addChildWidget(self.chart_view1)
         self.main_layout.addChildWidget(self.chart_view2)
@@ -147,6 +150,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart2.legend().setAlignment(Qt.AlignBottom)
 
         # self.series_1.setPointLabelsClipping(True)
+
+        self.chart1.setAcceptHoverEvents(True)
         self.series_1.setPointsVisible(True)
         self.series_2.setPointsVisible(True)
 
@@ -301,6 +306,26 @@ class MainUi(QtWidgets.QMainWindow):
             # self.series_3.replace(data_3)
 
             # self.chart.scroll(2, 0)
+
+    def keep_callout(self):
+        self.m_callouts.append(self.m_tooltip)
+        self.m_tooltip = Callout(self.m_chart)
+        self.chart_view1.scene().addItem(self.m_tooltip)
+
+    def tooltip(self, point: QPointF, state: bool):
+        if not self.m_tooltip:
+            self.m_tooltip = Callout(self.m_chart)
+        # print("hovered")
+        if state:
+
+            self.m_tooltip.setText("X: %d \nY: %d" % (point.x(), point.y()))
+            self.m_tooltip.m_anchor = point
+            self.m_tooltip.setZValue(11)
+            self.m_tooltip.updateGeometry()
+            self.m_tooltip.show()
+            # print("state")
+        else:
+            self.m_tooltip.hide()
 
 
 def main():
