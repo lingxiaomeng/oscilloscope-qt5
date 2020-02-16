@@ -97,6 +97,7 @@ class MainUi(QtWidgets.QMainWindow):
         save_action = QAction("Save", self)
         load_action = QAction("Load", self)
         save_action.triggered.connect(self.save_data)
+        load_action.triggered.connect(self.load_data)
         file_menu.addAction(save_action)
         file_menu.addAction(load_action)
         action_menu = self.menuBar().addMenu('Action')
@@ -193,17 +194,42 @@ class MainUi(QtWidgets.QMainWindow):
         print("end")
 
     def save_data(self):
-        filename = QFileDialog.getSaveFileName(self, 'save file', "", "Text Files (*.txt)")
+        filename = QFileDialog.getSaveFileName(self, 'save file', "", "Qt Wave Files (*.qtwave)")
         if filename[0] != '':
             f = open(filename[0], 'w')
-            f.write("data1\n")
+            # f.write("data1\n")
             for data in self.original_data_1:
                 f.write(str(data.y()) + ",")
             f.write("\n")
-            f.write("data2\n")
+            # f.write("data2\n")
             for data in self.original_data_2:
                 f.write(str(data.y()) + ",")
             f.write("\n")
+            f.close()
+
+    def load_data(self):
+        filename = QFileDialog.getOpenFileName(self, 'read file', "", "Qt Wave Files (*.qtwave)")
+        if filename[0] != '':
+            print(filename)
+            f = open(filename[0], 'r')
+
+            data = f.read().split('\n')
+            print(data)
+            data1 = data[0].split(',')
+            data2 = data[1].split(',')
+            print(data1)
+            print(data2)
+            self.original_data_1 = list()
+            self.original_data_2 = list()
+            length = len(data1) - 1
+            for i in range(len(data1) - 1):
+                self.original_data_1.append(QPointF(i, float(data1[i])))
+                self.original_data_2.append(QPointF(i, float(data2[i])))
+            self.series_1.replace(self.original_data_1)
+            self.series_2.replace(self.original_data_2)
+            self.configurations.update(0, length, length, 0, 360, 0, 10)
+            self.configuration_reset()
+            self.count = length
             f.close()
 
     def change_data(self):
@@ -230,7 +256,6 @@ class MainUi(QtWidgets.QMainWindow):
             self.series_2.replace(data2)
             self.chart1.axisX().setRange(start, end)
             self.chart2.axisX().setRange(start, end)
-
         except ValueError:
             print("value Error")
 
@@ -306,26 +331,6 @@ class MainUi(QtWidgets.QMainWindow):
             # self.series_3.replace(data_3)
 
             # self.chart.scroll(2, 0)
-
-    def keep_callout(self):
-        self.m_callouts.append(self.m_tooltip)
-        self.m_tooltip = Callout(self.m_chart)
-        self.chart_view1.scene().addItem(self.m_tooltip)
-
-    def tooltip(self, point: QPointF, state: bool):
-        if not self.m_tooltip:
-            self.m_tooltip = Callout(self.m_chart)
-        # print("hovered")
-        if state:
-
-            self.m_tooltip.setText("X: %d \nY: %d" % (point.x(), point.y()))
-            self.m_tooltip.m_anchor = point
-            self.m_tooltip.setZValue(11)
-            self.m_tooltip.updateGeometry()
-            self.m_tooltip.show()
-            # print("state")
-        else:
-            self.m_tooltip.hide()
 
 
 def main():

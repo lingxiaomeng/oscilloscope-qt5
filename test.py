@@ -413,7 +413,6 @@
 #
 # if __name__ == '__main__':
 #     main()
-r = 123
-g = 143
-b = 167
-print((r << 16) + (g << 8) + b)
+f = open('/wave.qtwave', 'r+')
+print(f)
+print(f.readlines())

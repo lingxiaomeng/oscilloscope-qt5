@@ -11,7 +11,7 @@ from callout import Callout
 
 
 class ChartView(QChartView):
-    def __init__(self, *__args,chart:QChart):
+    def __init__(self, *__args, chart: QChart):
         super().__init__(*__args)
         self.m_callouts = list()
         self.setChart(chart)
@@ -36,7 +36,6 @@ class ChartView(QChartView):
             self.x_old = event.x()
             self.y_old = event.y()
         super().mouseMoveEvent(event)
-
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() and event.button() == Qt.LeftButton:
@@ -64,9 +63,10 @@ class ChartView(QChartView):
     def tooltip(self, point: QPointF, state: bool):
         if not self.m_tooltip:
             self.m_tooltip = Callout(self.chart())
-        print("hovered")
         if state:
-            self.m_tooltip.setText("X: %d \nY: %d" % (point.x(), point.y()))
+            x = int(point.x())
+            y = self.chart().series()[0].at(x).y()
+            self.m_tooltip.setText("X: %d \nY: %f" % (x,y))
             self.m_tooltip.m_anchor = point
             self.m_tooltip.setZValue(11)
             self.m_tooltip.updateGeometry()
@@ -85,7 +85,8 @@ class ChartView(QChartView):
 
         super().resizeEvent(event)
 
-    def addSeries(self, qAbstractSeries: QAbstractSeries):
-        self.chart().addSeries(qAbstractSeries)
-        qAbstractSeries.clicked.connect(self.keep_callout)
-        qAbstractSeries.hovered.connect(self.tooltip)
+    def addSeries(self, abstractSeries: QAbstractSeries):
+        self.chart().addSeries(abstractSeries)
+
+        abstractSeries.clicked.connect(self.keep_callout)
+        abstractSeries.hovered.connect(self.tooltip)
