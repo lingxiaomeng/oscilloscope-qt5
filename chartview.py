@@ -11,7 +11,7 @@ from callout import Callout
 
 
 class ChartView(QChartView):
-    def __init__(self, *__args, chart: QChart):
+    def __init__(self, *__args, chart: QChart, data: list):
         super().__init__(*__args)
         self.m_callouts = list()
         self.setChart(chart)
@@ -24,6 +24,7 @@ class ChartView(QChartView):
         self.m_tooltip.hide()
         self.scene().addItem(self.m_tooltip)
         self.setMouseTracking(True)
+        self.data = data
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.is_clicking:
@@ -64,9 +65,9 @@ class ChartView(QChartView):
         if not self.m_tooltip:
             self.m_tooltip = Callout(self.chart())
         if state:
-            x = int(point.x())
-            y = self.chart().series()[0].at(x).y()
-            self.m_tooltip.setText("X: %d \nY: %f" % (x,y))
+            x = round(point.x())
+            y = self.data[x].y()
+            self.m_tooltip.setText("X: %d \nY: %f" % (x, y))
             self.m_tooltip.m_anchor = point
             self.m_tooltip.setZValue(11)
             self.m_tooltip.updateGeometry()

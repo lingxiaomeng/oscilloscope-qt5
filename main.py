@@ -45,8 +45,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_layout.setSpacing(0)  # 去除缝隙
         self.chart1 = QChart()
         self.chart2 = QChart()
-        self.chart_view1 = ChartView(chart=self.chart1)
-        self.chart_view2 = ChartView(chart=self.chart2)
+        self.chart_view1 = ChartView(chart=self.chart1, data=self.original_data_1)
+        self.chart_view2 = ChartView(chart=self.chart2, data=self.original_data_2)
 
         self.chart_view1.setObjectName("chart1")
         self.chart_view2.setObjectName("chart2")
@@ -67,7 +67,7 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.start_btn = QPushButton("Start")
         self.start_btn.setIcon(QIcon("start.png"))
-        self.start_btn.setGeometry(615, 500, 70, 40)
+        self.start_btn.setGeometry(615, 365, 70, 40)
 
         self.main_layout.addChildWidget(self.start_btn)
         self.init_chart()
@@ -96,18 +96,24 @@ class MainUi(QtWidgets.QMainWindow):
         file_menu = self.menuBar().addMenu('File')
         save_action = QAction("Save", self)
         load_action = QAction("Load", self)
+        reset_action = QAction("Reset", self)
+
         save_action.triggered.connect(self.save_data)
         load_action.triggered.connect(self.load_data)
+        reset_action.triggered.connect(self.data_reset)
         file_menu.addAction(save_action)
         file_menu.addAction(load_action)
+
         action_menu = self.menuBar().addMenu('Action')
         self.start_action = QAction("Start", self)
         # option_menu = self.menuBar().addMenu('Options')
-        range_action = QAction("Settings", self)
-        file_menu.addAction(range_action)
+        setting_action = QAction("Settings", self)
+        file_menu.addAction(setting_action)
         action_menu.addAction(self.start_action)
+        action_menu.addAction(reset_action)
+
         self.start_action.triggered.connect(self.stop_slot)
-        range_action.triggered.connect(self.configuration_setting)
+        setting_action.triggered.connect(self.configuration_setting)
 
     def init_chart(self):
         self.chart_view1.addSeries(self.series_1)
@@ -188,10 +194,17 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
         self.chart2.axisY().setRange(self.configurations.phase_min, self.configurations.phase_max)
 
+        data1 = list()
+        data2 = list()
+        data1 += (self.original_data_1[self.configurations.time_min:self.configurations.time_max])
+        data2 += (self.original_data_1[self.configurations.time_min:self.configurations.time_max])
+        self.series_1.replace(data1)
+        self.series_2.replace(data2)
+
     def configuration_setting(self):
         setting_window = SettingWindow(self, self.configurations)
         setting_window.show()
-        print("end")
+        # print("end")
 
     def save_data(self):
         filename = QFileDialog.getSaveFileName(self, 'save file', "", "Qt Wave Files (*.qtwave)")
@@ -231,6 +244,18 @@ class MainUi(QtWidgets.QMainWindow):
             self.configuration_reset()
             self.count = length
             f.close()
+
+    def data_reset(self):
+        self.configurations.update(0, 100, 100, 0, 360, 0, 10)
+        self.original_data_1 = list()
+        self.original_data_2 = list()
+        self.series_1.replace(self.original_data_1)
+        self.series_2.replace(self.original_data_2)
+        self.configuration_reset()
+        data3 = list()
+        self.series_3.replace(data3)
+        self.series_3_point.replace(data3[0:1])
+        self.count = 0
 
     def change_data(self):
         if not self.check_data1.isChecked():

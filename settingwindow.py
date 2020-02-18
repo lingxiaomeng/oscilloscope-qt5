@@ -57,25 +57,25 @@ class SettingWindow(QtWidgets.QDialog):
         main_layout.addWidget(self.btn, 4, 2)
 
     def change_configurations(self):
-        if self.time_min.value() > 0:
+        if self.time_min.value() >= 0:
             self.configurations.time_min = self.time_min.value()
         if self.time_max.value() - self.time_min.value() > 0:
             self.configurations.time_max = self.time_max.value()
+            self.configurations.time_max_range = self.configurations.time_max - self.configurations.time_min
         else:
             self.configurations.time_max = self.configurations.time_min + 100
-        if self.phase_min.value() > 0:
+        if self.phase_min.value() >= 0:
             self.configurations.phase_min = self.phase_min.value()
-        if self.phase_max.value() > 0 - self.phase_min.value():
+        if (self.phase_max.value() - self.phase_min.value()) > 0:
             self.configurations.phase_max = self.phase_max.value()
         else:
             self.configurations.phase_max = self.configurations.phase_min + 100
-        if self.mag_min.value() > 0:
+        if self.mag_min.value() >= 0:
             self.configurations.mag_min = self.mag_min.value()
-        if self.mag_max.value() - self.mag_min.value() > 0:
+        if (self.mag_max.value() - self.mag_min.value()) > 0:
             self.configurations.mag_max = self.mag_max.value()
         else:
             self.configurations.mag_max = self.configurations.mag_min + 100
-        if self.configurations.time_max - self.configurations.time_min > 0:
-            self.configurations.time_max_range = self.configurations.time_max - self.configurations.time_min
+
         self.parent.configuration_reset()
         self.close()
