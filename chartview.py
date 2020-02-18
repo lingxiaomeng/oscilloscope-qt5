@@ -66,7 +66,12 @@ class ChartView(QChartView):
             self.m_tooltip = Callout(self.chart())
         if state:
             x = round(point.x())
-            y = self.data[x].y()
+            # y = self.data[x].y()
+
+            start = self.chart().series()[0].pointsVector()[0].x()
+
+            y = self.chart().series()[0].at(x-start).y()
+
             self.m_tooltip.setText("X: %d \nY: %f" % (x, y))
             self.m_tooltip.m_anchor = point
             self.m_tooltip.setZValue(11)
