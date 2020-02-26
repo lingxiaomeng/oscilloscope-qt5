@@ -4,6 +4,8 @@ import random
 import sys
 from math import sin
 
+import spidev
+
 from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
@@ -197,7 +199,7 @@ class MainUi(QtWidgets.QMainWindow):
         data1 = list()
         data2 = list()
         data1 += (self.original_data_1[self.configurations.time_min:self.configurations.time_max])
-        data2 += (self.original_data_1[self.configurations.time_min:self.configurations.time_max])
+        data2 += (self.original_data_2[self.configurations.time_min:self.configurations.time_max])
         self.series_1.replace(data1)
         self.series_2.replace(data2)
 

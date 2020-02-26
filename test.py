@@ -413,6 +413,20 @@
 #
 # if __name__ == '__main__':
 #     main()
-f = open('/wave.qtwave', 'r+')
-print(f)
-print(f.readlines())
+from spidev import SpiDev
+
+spi = SpiDev()
+spi.xfer()
+# 方法--open
+bus = 0  # supporyed values:0,1
+device = 0  # supported values:0,1   default: 0
+spi.open(bus, device)  # 连接到指定的spi设备     /dev/spidev<bus>.<device>
+# 方法--readbytes/writebytes
+spi.readbytes(10)  # 从spi设备读取n个字节
+spi.writebytes(['x00'])  # 将数据列表写入spi设备
+# spi.writebytes2(list of values)   #接受大型列表，支持numpy字节数组
+# spi.xfer(send_list)   #传输数据
+# 方法--close
+spi.close()  # 关闭连接
+
+# 配置
