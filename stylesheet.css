@@ -11,7 +11,7 @@ QWidget#main{
     background-color: black;
 }
 QPushButton{
-        color: black;
+        color: gray;
 }
 
 QWidget#chart1 {

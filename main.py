@@ -1,19 +1,13 @@
 # coding:utf-8
-import math
 import random
 import sys
-from math import sin
-
-import spidev
 
 from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QPainter, QIcon, QPixmap
-from PyQt5.QtWidgets import QLabel, QCheckBox, QPushButton, QLineEdit, QAction, QFileDialog
+from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush
+from PyQt5.QtWidgets import QLabel, QCheckBox, QPushButton, QLineEdit, QAction, QFileDialog, QGridLayout
 
-from callout import Callout
-from chart import Chart
 from chartview import ChartView
 from configurations import Configurations
 from settingwindow import SettingWindow
@@ -38,15 +32,18 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.is_stop = True
 
-        self.setFixedSize(1000, 740)
+        self.setMinimumSize(1000, 740)
         self.main_widget = QtWidgets.QWidget()  # 创建窗口主部件
         self.main_layout = QtWidgets.QGridLayout()  # 创建主部件的网格布局
+
+        self.control_layout = QGridLayout()
+
         self.main_widget.setLayout(self.main_layout)  # 设置窗口主部件布局为网格布局
         self.setCentralWidget(self.main_widget)  # 设置窗口主部件
         # self.setWindowOpacity(0.9)  # 设置窗口透明度
         # self.setAttribute(QtCore.Qt.WA_TranslucentBackground)  # 设置窗口背景透明
         # self.setWindowFlag(QtCore.Qt.FramelessWindowHint)  # 隐藏边框
-        self.main_layout.setSpacing(0)  # 去除缝隙
+        self.main_layout.setSpacing(10)  # 去除缝隙
         self.chart1 = QChart()
         self.chart2 = QChart()
         self.chart_view1 = ChartView(chart=self.chart1, data=self.original_data_1)
@@ -71,16 +68,18 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.start_btn = QPushButton("Start")
         self.start_btn.setIcon(QIcon("start.png"))
-        self.start_btn.setGeometry(615, 365, 70, 40)
+        # self.start_btn.setFixedSize(70, 40)
 
-        self.main_layout.addChildWidget(self.start_btn)
+        self.main_layout.addLayout(self.control_layout, 1, 1)
+        self.control_layout.addWidget(self.start_btn, 0, 0, Qt.AlignTop | Qt.AlignLeft)
+        # self.control_layout.setOriginCorner(Qt.TopLeftCorner)
         self.init_chart()
         self.init_menu()
         self.init_constellation_diagram()
         self.timer.timeout.connect(self.timer_slot)
         self.timer.start(20)
-        self.chart_view1.setFixedSize(600, 350)
-        self.chart_view2.setFixedSize(600, 350)
+        self.chart_view1.setMinimumSize(600, 350)
+        self.chart_view2.setMinimumSize(600, 350)
 
         self.check_data1.setChecked(True)
         self.check_data2.setChecked(True)
@@ -119,6 +118,19 @@ class MainUi(QtWidgets.QMainWindow):
         self.start_action.triggered.connect(self.stop_slot)
         setting_action.triggered.connect(self.configuration_setting)
 
+    def init_chart_background(self, qchart: QChart, series: QAbstractSeries):
+        pen = QPen(QColor(0xff8c00))
+        background_brush = QBrush(QColor(0x808080))
+        qchart.setBackgroundBrush(background_brush)
+        # pen.setWidth(1)
+        series.setPen(pen)
+        qchart.axisX().setLinePen(QPen(QColor(0xffffff)))
+        qchart.axisY().setLinePen(QPen(QColor(0xffffff)))
+        qchart.axisX().setLabelsBrush(QBrush(QColor(0xffffff)))
+        qchart.axisY().setLabelsBrush(QBrush(QColor(0xffffff)))
+        qchart.axisX().setTitleBrush(QBrush(QColor(0xffffff)))
+        qchart.axisY().setTitleBrush(QBrush(QColor(0xffffff)))
+
     def init_chart(self):
         self.chart_view1.addSeries(self.series_1)
         self.chart_view2.addSeries(self.series_2)
@@ -150,10 +162,10 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.chart_view2.setRenderHint(QPainter.Antialiasing)
 
-        self.main_layout.addChildWidget(self.chart_view1)
-        self.main_layout.addChildWidget(self.chart_view2)
-        self.chart_view1.setGeometry(10, 10, 600, 350)
-        self.chart_view2.setGeometry(10, 365, 600, 350)
+        self.main_layout.addWidget(self.chart_view1, 0, 0)
+        self.main_layout.addWidget(self.chart_view2, 1, 0)
+        # self.chart_view1.setGeometry(10, 10, 600, 350)
+        # self.chart_view2.setGeometry(10, 365, 600, 350)
 
         # self.chart1.legend().setVisible(True)
         self.chart1.legend().setAlignment(Qt.AlignBottom)
@@ -161,19 +173,21 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart2.legend().setAlignment(Qt.AlignBottom)
 
         # self.series_1.setPointLabelsClipping(True)
-
-        self.chart1.setAcceptHoverEvents(True)
+        # self.chart1.setAcceptHoverEvents(True)
         self.series_1.setPointsVisible(True)
         self.series_2.setPointsVisible(True)
+        self.init_chart_background(self.chart1,self.series_1)
+        self.init_chart_background(self.chart2,self.series_2)
+
 
     def init_constellation_diagram(self):
         self.constellation_chart = QPolarChart()
         self.constellation_chart_view = QChartView()
         self.constellation_chart_view.setObjectName("chart3")
         self.constellation_chart_view.setChart(self.constellation_chart)
-        self.constellation_chart_view.setFixedSize(350, 350)
-        self.main_layout.addChildWidget(self.constellation_chart_view)
-        self.constellation_chart_view.setGeometry(615, 10, 350, 350)
+        self.constellation_chart_view.setMinimumSize(350, 350)
+        self.main_layout.addWidget(self.constellation_chart_view, 0, 1)
+        # self.constellation_chart_view.setGeometry(615, 10, 350, 350)
         self.radialAxis = QValueAxis()
         self.radialAxis.setRange(self.configurations.mag_min, self.configurations.mag_max)
 
