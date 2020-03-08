@@ -2,8 +2,8 @@
 
 from PyQt5.Qt import Qt
 from PyQt5.QtChart import QChartView, QAbstractSeries, QChart
-from PyQt5.QtCore import QPointF, QRectF, QSizeF
-from PyQt5.QtGui import QMouseEvent, QWheelEvent, QResizeEvent
+from PyQt5.QtCore import QPointF, QRectF, QSizeF, QEvent
+from PyQt5.QtGui import QMouseEvent, QWheelEvent, QResizeEvent, QPen, QColor, QPainter
 from PyQt5.QtWidgets import QHBoxLayout
 
 # from main import MainUi
@@ -25,8 +25,17 @@ class ChartView(QChartView):
         self.scene().addItem(self.m_tooltip)
         self.setMouseTracking(True)
         self.data = data
+        self.setRubberBand(QChartView.RectangleRubberBand)
+        self.right_clicked = False
+        self.setRenderHint(QPainter.Antialiasing)
+
+        axisPen = QPen(QColor(0xd18952))
+        axisPen.setWidth(2)
+
 
     def mouseMoveEvent(self, event: QMouseEvent):
+        self.right_clicked = False
+
         if self.is_clicking:
             if self.x_old == 0 and self.y_old == 0:
                 pass
@@ -41,14 +50,23 @@ class ChartView(QChartView):
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() and event.button() == Qt.LeftButton:
             self.is_clicking = True
+            event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.RightButton, Qt.RightButton, Qt.NoModifier)
         elif event.button() and event.button() == Qt.RightButton:
-            self.chart().zoomReset()
+            self.right_clicked = True
+            event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+        super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         if self.is_clicking:
             self.x_old, self.y_old = 0, 0
             self.is_clicking = False
+            # event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.RightButton, Qt.RightButton, Qt.NoModifier)
+        else:
+            event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+        if self.right_clicked:
+            self.chart().zoomReset()
         self.callout.setText("")
+        super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event: QWheelEvent):
         if event.angleDelta().y() < 0:
@@ -70,7 +88,7 @@ class ChartView(QChartView):
 
             start = self.chart().series()[0].pointsVector()[0].x()
 
-            y = self.chart().series()[0].at(x-start).y()
+            y = self.chart().series()[0].at(x - start).y()
 
             self.m_tooltip.setText("X: %d \nY: %f" % (x, y))
             self.m_tooltip.m_anchor = point

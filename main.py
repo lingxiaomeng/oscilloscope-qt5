@@ -13,6 +13,7 @@ from PyQt5.QtGui import QFont, QPainter, QIcon, QPixmap
 from PyQt5.QtWidgets import QLabel, QCheckBox, QPushButton, QLineEdit, QAction, QFileDialog
 
 from callout import Callout
+from chart import Chart
 from chartview import ChartView
 from configurations import Configurations
 from settingwindow import SettingWindow
@@ -22,6 +23,7 @@ class MainUi(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.setObjectName('main')
         self.configurations = Configurations()
         self.m_tooltip = None
         self.m_callouts = list()
@@ -88,7 +90,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.check_data1.stateChanged.connect(self.change_data)
         self.check_data2.stateChanged.connect(self.change_data)
         # self.save_btn.clicked.connect(self.save_data)
-        file = open('stylesheet.qss')
+        file = open('stylesheet.css')
         self.stylesheet = file.read()
         # print(self.stylesheet)
         self.setStyleSheet(self.stylesheet)

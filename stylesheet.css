@@ -1,14 +1,30 @@
 
-/*QPushButton#stop_btu {*/
-/*    background-color: white;*/
-/*}*/
+QPushButton#start_btu {
+    background-color: white;
+}
 
-QPushButton#stop_btu:hover {
+QPushButton#start_btu:hover {
     background: #ff4a48;
 }
 
+QWidget#main{
+    background-color: black;
+}
+QPushButton{
+        color: black;
+}
+
 QWidget#chart1 {
-    background-color: white;
+    background-color: black;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
+    /*border-top-right-radius: 10px;*/
+    /*border-bottom-right-radius: 10px;*/
+}
+QWidget#chart {
+    background-color: black;
     border-top: 1px solid black;
     border-bottom: 1px solid black;
     border-right: 1px solid black;
@@ -17,18 +33,9 @@ QWidget#chart1 {
     /*border-bottom-right-radius: 10px;*/
 }
 
-QWidget#chart1 {
-    background-color: white;
-    border-top: 1px solid black;
-    border-bottom: 1px solid black;
-    border-right: 1px solid black;
-    border-left: 1px solid black;
-    /*border-top-right-radius: 10px;*/
-    /*border-bottom-right-radius: 10px;*/
-}
 
 QWidget#chart2 {
-    background-color: white;
+    background-color: black;
     border-top: 1px solid black;
     border-bottom: 1px solid black;
     border-right: 1px solid black;
@@ -38,7 +45,7 @@ QWidget#chart2 {
 }
 
 QWidget#chart3 {
-    background-color: white;
+    background-color: black;
     border-top: 1px solid black;
     border-bottom: 1px solid black;
     border-right: 1px solid black;
