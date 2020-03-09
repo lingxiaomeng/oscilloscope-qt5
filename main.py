@@ -32,7 +32,7 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.is_stop = True
 
-        self.setMinimumSize(1000, 740)
+        # self.setMinimumSize(1000, 740)
         self.main_widget = QtWidgets.QWidget()  # 创建窗口主部件
         self.main_layout = QtWidgets.QGridLayout()  # 创建主部件的网格布局
 
@@ -71,15 +71,20 @@ class MainUi(QtWidgets.QMainWindow):
         # self.start_btn.setFixedSize(70, 40)
 
         self.main_layout.addLayout(self.control_layout, 1, 1)
+        self.main_layout.setColumnStretch(0, 2)
+        self.main_layout.setColumnStretch(1, 1)
+        self.main_layout.setRowStretch(0, 1)
+        self.main_layout.setRowStretch(1, 1)
         self.control_layout.addWidget(self.start_btn, 0, 0, Qt.AlignTop | Qt.AlignLeft)
+        self.control_layout.setContentsMargins(10, 10, 10, 10)
         # self.control_layout.setOriginCorner(Qt.TopLeftCorner)
         self.init_chart()
         self.init_menu()
         self.init_constellation_diagram()
         self.timer.timeout.connect(self.timer_slot)
-        self.timer.start(20)
-        self.chart_view1.setMinimumSize(600, 350)
-        self.chart_view2.setMinimumSize(600, 350)
+        self.timer.start(50)
+        # self.chart_view1.setMinimumSize(600, 350)
+        # self.chart_view2.setMinimumSize(600, 350)
 
         self.check_data1.setChecked(True)
         self.check_data2.setChecked(True)
@@ -119,10 +124,10 @@ class MainUi(QtWidgets.QMainWindow):
         setting_action.triggered.connect(self.configuration_setting)
 
     def init_chart_background(self, qchart: QChart, series: QAbstractSeries):
-        pen = QPen(QColor(0xff8c00))
-        background_brush = QBrush(QColor(0x808080))
+        pen = QPen(QColor('green'))
+        background_brush = QBrush(QColor(0x555555))
         qchart.setBackgroundBrush(background_brush)
-        # pen.setWidth(1)
+        pen.setWidth(1.5)
         series.setPen(pen)
         qchart.axisX().setLinePen(QPen(QColor(0xffffff)))
         qchart.axisY().setLinePen(QPen(QColor(0xffffff)))
@@ -176,16 +181,15 @@ class MainUi(QtWidgets.QMainWindow):
         # self.chart1.setAcceptHoverEvents(True)
         self.series_1.setPointsVisible(True)
         self.series_2.setPointsVisible(True)
-        self.init_chart_background(self.chart1,self.series_1)
-        self.init_chart_background(self.chart2,self.series_2)
-
+        self.init_chart_background(self.chart1, self.series_1)
+        self.init_chart_background(self.chart2, self.series_2)
 
     def init_constellation_diagram(self):
         self.constellation_chart = QPolarChart()
         self.constellation_chart_view = QChartView()
         self.constellation_chart_view.setObjectName("chart3")
         self.constellation_chart_view.setChart(self.constellation_chart)
-        self.constellation_chart_view.setMinimumSize(350, 350)
+        # self.constellation_chart_view.setMinimumSize(350, 350)
         self.main_layout.addWidget(self.constellation_chart_view, 0, 1)
         # self.constellation_chart_view.setGeometry(615, 10, 350, 350)
         self.radialAxis = QValueAxis()
@@ -311,6 +315,8 @@ class MainUi(QtWidgets.QMainWindow):
             # self.xy_label.setText("Magnitude:%.8f  Phase:%.8f" % (mag, phase))
             self.constellation_chart.setTitle("Magnitude:%.4f  Phase:%.4f" % (mag, phase))
             self.update_data(mag, phase)
+            self.chart_view1.updateGeometry()
+            self.chart_view2.updateGeometry()
 
     def stop_slot(self):
         if self.is_stop:

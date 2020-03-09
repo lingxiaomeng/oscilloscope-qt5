@@ -86,7 +86,6 @@ class Callout(QGraphicsItem):
             path.lineTo(anchor)
             path.lineTo(point2)
             path = path.simplified()
-
         painter.setPen(QColor(30, 30, 30))
         painter.setBrush(QColor(255, 255, 255))
         painter.drawPath(path)

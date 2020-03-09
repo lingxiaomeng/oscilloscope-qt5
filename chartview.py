@@ -7,7 +7,9 @@ from PyQt5.QtGui import QMouseEvent, QWheelEvent, QResizeEvent, QPen, QColor, QP
 from PyQt5.QtWidgets import QHBoxLayout
 
 # from main import MainUi
+
 from callout import Callout
+from markerline import MarkerLine
 
 
 class ChartView(QChartView):
@@ -22,16 +24,24 @@ class ChartView(QChartView):
         self.callout = Callout(self.chart())
         self.m_tooltip = Callout(self.chart())
         self.m_tooltip.hide()
+
         self.scene().addItem(self.m_tooltip)
         self.setMouseTracking(True)
         self.data = data
         self.setRubberBand(QChartView.RectangleRubberBand)
         self.right_clicked = False
         self.setRenderHint(QPainter.Antialiasing)
+        self.marker_lines = list()
 
-        axisPen = QPen(QColor(0xd18952))
-        axisPen.setWidth(2)
+    def updateGeometry(self) -> None:
+        for callout in self.m_callouts:
+            callout.updateGeometry()
+        for marker in self.marker_lines:
+            marker.updateGeometry()
 
+        self.chart().updateGeometry()
+        # QAbstractSeries.setUseOpenGL()
+        super().updateGeometry()
 
     def mouseMoveEvent(self, event: QMouseEvent):
         self.right_clicked = False
@@ -45,15 +55,30 @@ class ChartView(QChartView):
                 self.chart().scroll(-x, y)
             self.x_old = event.x()
             self.y_old = event.y()
+        self.updateGeometry()
         super().mouseMoveEvent(event)
 
+    def mouseDoubleClickEvent(self, event) -> None:
+        print("double clicked")
+        marker = MarkerLine(self.chart())
+        marker.m_anchor = self.chart().mapToValue(event.pos())
+        marker.setText("12345")
+        marker.setZValue(11)
+        marker.updateGeometry()
+        marker.show()
+        self.scene().addItem(marker)
+        self.marker_lines.append(marker)
+        super().mouseDoubleClickEvent(event)
+
     def mousePressEvent(self, event: QMouseEvent):
+        # print(self.mapFromParent(event.pos()))
         if event.button() and event.button() == Qt.LeftButton:
             self.is_clicking = True
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.RightButton, Qt.RightButton, Qt.NoModifier)
         elif event.button() and event.button() == Qt.RightButton:
             self.right_clicked = True
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
@@ -65,7 +90,9 @@ class ChartView(QChartView):
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
         if self.right_clicked:
             self.chart().zoomReset()
-        self.callout.setText("")
+        # self.callout.setText("")
+
+        self.updateGeometry()
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event: QWheelEvent):
@@ -85,11 +112,8 @@ class ChartView(QChartView):
         if state:
             x = round(point.x())
             # y = self.data[x].y()
-
             start = self.chart().series()[0].pointsVector()[0].x()
-
             y = self.chart().series()[0].at(x - start).y()
-
             self.m_tooltip.setText("X: %d \nY: %f" % (x, y))
             self.m_tooltip.m_anchor = point
             self.m_tooltip.setZValue(11)
@@ -104,13 +128,11 @@ class ChartView(QChartView):
             self.scene().setSceneRect(QRectF(QPointF(0, 0), QSizeF(event.size())))
             self.chart().resize(QSizeF(event.size()))
 
-            for callout in self.m_callouts:
-                callout.updateGeometry()
-
+            self.updateGeometry()
         super().resizeEvent(event)
 
     def addSeries(self, abstractSeries: QAbstractSeries):
         self.chart().addSeries(abstractSeries)
-
-        abstractSeries.clicked.connect(self.keep_callout)
+        # abstractSeries.clicked.connect(self.keep_callout)
         abstractSeries.hovered.connect(self.tooltip)
+        self.chart().series()[0].setUseOpenGL(True)
