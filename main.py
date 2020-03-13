@@ -162,7 +162,6 @@ class MainUi(QtWidgets.QMainWindow):
         self.constellation_chart_view.setObjectName("chart3")
         self.constellation_chart_view.setChart(self.constellation_chart)
         self.constellation_chart.setTitle(' ')
-
         self.main_layout.addWidget(self.constellation_chart_view, 0, 1)
 
         radial_axis = QValueAxis()
@@ -186,6 +185,15 @@ class MainUi(QtWidgets.QMainWindow):
         series.attachAxis(radial_axis)
         series.attachAxis(angular_axis)
 
+        self.constellation_chart.setTitleBrush(Qt.white)
+        self.constellation_chart.setBackgroundBrush(Qt.black)
+
+        angular_axis.setLinePen(Qt.white)
+        angular_axis.setGridLinePen(Qt.white)
+        angular_axis.setLabelsBrush(Qt.white)
+        radial_axis.setLinePen(Qt.white)
+        radial_axis.setGridLinePen(Qt.white)
+        radial_axis.setLabelsBrush(Qt.white)
         self.constellation_chart_view.setRenderHint(QPainter.Antialiasing)
 
     def configuration_reset(self):
