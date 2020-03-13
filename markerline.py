@@ -48,12 +48,11 @@ class MarkerLine(QGraphicsItem):
         rect = QRectF()
         rect.setLeft(max(min(self.m_rect.left(), anchor.x()), original_point.x()))
         rect.setRight(min(max(self.m_rect.right(), anchor.x()), far_point.x()))
-        rect.setTop(start_point.y())
+        rect.setTop(start_point.y() - 20)
         rect.setBottom(end_point.y())
         return rect
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget):
-
         start_point = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), self.m_chart.axisY().max()))))
         end_point = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), self.m_chart.axisY().min()))))
 
@@ -61,11 +60,12 @@ class MarkerLine(QGraphicsItem):
         mr = self.m_rect
         path.addRoundedRect(mr, 5, 5)
         anchor = QPointF(self.mapFromParent(self.m_chart.mapToPosition(self.m_anchor)))
-        painter.setPen(QColor(30, 30, 30))
-        painter.setBrush(QColor(255, 255, 255))
+        painter.setPen(QColor('green'))
+        painter.setBrush(QColor('green'))
         # painter.drawPath(path)
         # painter.drawText(self.m_textRect, self.m_text)
         painter.drawLine(start_point, end_point)
+        painter.drawText(start_point.x(), start_point.y() - 10, '%.4f' % (self.m_anchor.x()))
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
         event.setAccepted(True)

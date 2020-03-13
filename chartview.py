@@ -38,8 +38,9 @@ class ChartView(QChartView):
             callout.updateGeometry()
         for marker in self.marker_lines:
             marker.updateGeometry()
-
         self.chart().updateGeometry()
+        # self.scene().update()
+
         # QAbstractSeries.setUseOpenGL()
         super().updateGeometry()
 
@@ -59,15 +60,20 @@ class ChartView(QChartView):
         super().mouseMoveEvent(event)
 
     def mouseDoubleClickEvent(self, event) -> None:
-        print("double clicked")
-        marker = MarkerLine(self.chart())
-        marker.m_anchor = self.chart().mapToValue(event.pos())
-        marker.setText("12345")
-        marker.setZValue(11)
-        marker.updateGeometry()
-        marker.show()
-        self.scene().addItem(marker)
-        self.marker_lines.append(marker)
+        if event.button() == Qt.LeftButton:
+            marker = MarkerLine(self.chart())
+            marker.m_anchor = self.chart().mapToValue(event.pos())
+            marker.setZValue(11)
+            marker.setText(str(marker.m_anchor.x()))
+            marker.updateGeometry()
+            marker.show()
+            self.scene().addItem(marker)
+            self.marker_lines.append(marker)
+        else:
+            for item in self.marker_lines:
+                self.scene().removeItem(item)
+            self.marker_lines.clear()
+            self.updateGeometry()
         super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent):
@@ -76,9 +82,8 @@ class ChartView(QChartView):
             self.is_clicking = True
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.RightButton, Qt.RightButton, Qt.NoModifier)
         elif event.button() and event.button() == Qt.RightButton:
-            self.right_clicked = True
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
-
+            self.right_clicked = True
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
@@ -91,7 +96,6 @@ class ChartView(QChartView):
         if self.right_clicked:
             self.chart().zoomReset()
         # self.callout.setText("")
-
         self.updateGeometry()
         super().mouseReleaseEvent(event)
 
@@ -135,4 +139,4 @@ class ChartView(QChartView):
         self.chart().addSeries(abstractSeries)
         # abstractSeries.clicked.connect(self.keep_callout)
         abstractSeries.hovered.connect(self.tooltip)
-        self.chart().series()[0].setUseOpenGL(True)
+        abstractSeries.setUseOpenGL(True)

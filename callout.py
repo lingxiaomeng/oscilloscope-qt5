@@ -18,6 +18,8 @@ class Callout(QGraphicsItem):
         self.m_font = QFont()
         self.m_textRect = QRectF()
         self.m_rect = QRectF()
+        self.setZValue(11)
+
 
     def setText(self, text: str):
         self.m_text = text
