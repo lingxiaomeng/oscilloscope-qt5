@@ -162,6 +162,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.constellation_chart_view.setObjectName("chart3")
         self.constellation_chart_view.setChart(self.constellation_chart)
         self.constellation_chart.setTitle(' ')
+
         self.main_layout.addWidget(self.constellation_chart_view, 0, 1)
 
         radial_axis = QValueAxis()
