@@ -327,6 +327,8 @@ class MainUi(QtWidgets.QMainWindow):
             self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
 
 
+
+
 def main():
     app = QtWidgets.QApplication(sys.argv)
     gui = MainUi()
