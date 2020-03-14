@@ -1,15 +1,11 @@
 # coding:utf-8
 
-from PyQt5.Qt import Qt
-from PyQt5.QtChart import QChartView, QAbstractSeries, QChart, QPolarChart
-from PyQt5.QtCore import QPointF, QRectF, QSizeF, QEvent, QPoint
-from PyQt5.QtGui import QMouseEvent, QWheelEvent, QResizeEvent, QPen, QColor, QPainter
-from PyQt5.QtWidgets import QHBoxLayout
+from PyQt5.QtChart import QChartView, QAbstractSeries, QChart
+from PyQt5.QtCore import QPointF, QRectF, QSizeF
+from PyQt5.QtGui import QResizeEvent, QPainter
 
 # from main import MainUi
 from arrow import QArrow
-from callout import Callout
-from markerline import MarkerLine
 
 
 class PolarChartView(QChartView):
@@ -20,31 +16,20 @@ class PolarChartView(QChartView):
         self.setMouseTracking(True)
         self.right_clicked = False
         self.setRenderHint(QPainter.Antialiasing)
-        self.arrow = None
-        # self.arrow = QArrow(chart)
-        # self.scene().addItem(self.arrow)
+        self.arrow = QArrow(chart)
+        self.scene().addItem(self.arrow)
         self.x = 0
         self.y = 0
 
-    def updateGeometry(self) -> None:
-        if self.arrow:
-            self.arrow.updateGeometry()
-        super().updateGeometry()
+    def update(self) -> None:
+        self.arrow.update()
+        super().update()
 
     def updateArrow(self, mag, phase):
-        # phase_max = self.chart().axisX().max()
-        # mag_max = self.chart().axisY().max()
-
         self.x = phase
         self.y = mag
-        if self.arrow:
-            self.arrow.dest = QPointF(self.x, self.y)
-            self.updateGeometry()
-        else:
-            self.arrow = QArrow(self.chart())
-            self.arrow.dest = QPointF(self.x, self.y)
-            self.scene().addItem(self.arrow)
-            self.arrow.show()
+        self.arrow.dest = QPointF(self.x, self.y)
+        self.update()
 
     def resizeEvent(self, event: QResizeEvent):
         if self.scene():

@@ -5,8 +5,8 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush
-from PyQt5.QtWidgets import QLabel, QCheckBox, QPushButton, QLineEdit, QAction, QFileDialog, QGridLayout
+from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent
+from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout
 
 from PolarChartView import PolarChartView
 from chartview import ChartView
@@ -40,7 +40,6 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_layout.setRowStretch(0, 1)
         self.main_layout.setRowStretch(1, 1)
 
-
         self.chart1 = QChart()
         self.chart2 = QChart()
         self.chart_view1 = ChartView(chart=self.chart1, data=self.original_data_1)
@@ -48,7 +47,10 @@ class MainUi(QtWidgets.QMainWindow):
         self.constellation_chart = QPolarChart()
         self.constellation_chart_view = PolarChartView(chart=self.constellation_chart)
 
-
+        self.chart_view1.setChartview(self.chart_view2)
+        self.chart_view2.setChartview(self.chart_view1)
+        self.chart_view1.setPolarChartview(self.constellation_chart_view)
+        self.chart_view2.setPolarChartview(self.constellation_chart_view)
 
         self.series_1 = QLineSeries()
         self.series_2 = QLineSeries()
@@ -73,6 +75,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.stylesheet = file.read()
         self.setStyleSheet(self.stylesheet)
         self.setMouseTracking(True)
+        self.grabKeyboard()
 
     def init_menu(self):
         file_menu = self.menuBar().addMenu('File')
@@ -233,7 +236,6 @@ class MainUi(QtWidgets.QMainWindow):
         if filename[0] != '':
             print(filename)
             f = open(filename[0], 'r')
-
             data = f.read().split('\n')
             print(data)
             data1 = data[0].split(',')
@@ -271,9 +273,25 @@ class MainUi(QtWidgets.QMainWindow):
             self.constellation_chart.setTitle("Magnitude:%.4f  Phase:%8f" % (mag, phase))
             self.constellation_chart_view.updateArrow(mag, phase)
             self.update_data(mag, phase)
-            # self.chart_view1.updateGeometry()
-            # self.chart_view2.updateGeometry()
+            self.chart_view1.update()
+            self.chart_view2.update()
             # self.updateGeometry()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Space:
+            if self.chart1.isZoomed():
+                self.chart1.zoomReset()
+                time_min = self.chart1.axisX().min()
+                time_max = self.chart1.axisX().max()
+                self.chart2.axisX().setRange(time_min, time_max)
+            if self.chart2.isZoomed():
+                self.chart2.zoomReset()
+                time_min = self.chart2.axisX().min()
+                time_max = self.chart2.axisX().max()
+                self.chart1.axisX().setRange(time_min, time_max)
+            self.chart_view1.update()
+            self.chart_view2.update()
+        super().keyPressEvent(event)
 
     def stop_slot(self):
         if self.is_stop:
@@ -325,8 +343,6 @@ class MainUi(QtWidgets.QMainWindow):
             self.configurations.time_max += 1
             self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
             self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
-
-
 
 
 def main():

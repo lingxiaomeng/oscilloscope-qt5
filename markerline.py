@@ -1,5 +1,6 @@
 import typing
 
+from PyQt5 import QtCore
 from PyQt5.Qt import Qt
 from PyQt5.QtChart import QChart, QAbstractAxis, QValueAxis
 from PyQt5.QtCore import QRectF, QPointF, QRect
@@ -17,7 +18,6 @@ class MarkerLine(QGraphicsItem):
         self.m_anchor = QPointF()
         self.m_font = QFont()
         self.m_textRect = QRectF()
-        self.m_rect = QRectF()
 
     def setText(self, text: str):
         self.m_text = text
@@ -25,12 +25,7 @@ class MarkerLine(QGraphicsItem):
         self.m_textRect = QRectF(metrics.boundingRect(QRect(0, 0, 150, 150), Qt.AlignLeft, self.m_text))
         self.m_textRect.translate(5, 5)
         self.prepareGeometryChange()
-        self.m_rect = QRectF(self.m_textRect.adjusted(-5, -5, 5, 5))
-        self.updateGeometry()
-
-    def updateGeometry(self):
-        self.prepareGeometryChange()
-        self.setPos(self.m_chart.mapToPosition(self.m_anchor) + QPointF(10, -50))
+        self.update()
 
     def boundingRect(self) -> QRectF:
         xmin = self.m_chart.axisX().min()
@@ -38,34 +33,29 @@ class MarkerLine(QGraphicsItem):
         ymin = self.m_chart.axisY().min()
         ymax = self.m_chart.axisY().max()
 
-        original_point = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPointF(xmin, ymin))))
-        far_point = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPointF(xmax, ymax))))
+        original_point = QPointF(self.mapFromScene(self.m_chart.mapToPosition(QPointF(xmin, ymin))))
+        far_point = QPointF(self.mapFromScene(self.m_chart.mapToPosition(QPointF(xmax, ymax))))
         start_point = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), ymax))))
         end_point = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), ymin))))
-
         from_parent = self.mapFromParent(self.m_chart.mapToPosition(self.m_anchor))
         anchor = QPointF(from_parent)
         rect = QRectF()
-        rect.setLeft(max(min(self.m_rect.left(), anchor.x()), original_point.x()))
-        rect.setRight(min(max(self.m_rect.right(), anchor.x()), far_point.x()))
+        rect.setLeft(max(min(self.m_textRect.left(), anchor.x()), original_point.x()))
+        rect.setRight(min(max(self.m_textRect.right(), anchor.x()), far_point.x()))
         rect.setTop(start_point.y() - 20)
         rect.setBottom(end_point.y())
+        # print(rect)
         return rect
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget):
-        start_point = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), self.m_chart.axisY().max()))))
-        end_point = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), self.m_chart.axisY().min()))))
 
-        path = QPainterPath()
-        mr = self.m_rect
-        path.addRoundedRect(mr, 5, 5)
-        anchor = QPointF(self.mapFromParent(self.m_chart.mapToPosition(self.m_anchor)))
-        painter.setPen(QColor('green'))
-        painter.setBrush(QColor('green'))
-        # painter.drawPath(path)
-        # painter.drawText(self.m_textRect, self.m_text)
-        painter.drawLine(start_point, end_point)
-        painter.drawText(start_point.x(), start_point.y() - 10, '%.4f' % (self.m_anchor.x()))
+        start_point = QPointF(self.mapFromScene(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), self.m_chart.axisY().max()))))
+        end_point = QPointF(self.mapFromScene(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), self.m_chart.axisY().min()))))
+        if self.boundingRect().left() <= start_point.x() <= self.boundingRect().right():
+            painter.setPen(QColor('green'))
+            painter.setBrush(QColor('green'))
+            painter.drawLine(start_point, end_point)
+            painter.drawText(start_point.x(), start_point.y() - 10, '%.4f' % (self.m_anchor.x()))
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
         event.setAccepted(True)

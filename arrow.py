@@ -1,24 +1,25 @@
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPen, QBrush
 from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsItem
-
+from PyQt5 import QtCore
 
 class QArrow(QGraphicsItem):
     def __init__(self, parent):
         super(QArrow, self).__init__()
         self.m_chart = parent
-        self.dest = QPointF(1, 1)
+        self.dest = QPointF(0, 0)
 
     def boundingRect(self) -> QRectF:
         rect = QRectF()
         rect.setLeft(0)
-        rect.setRight(500)
+        rect.setRight(1920)
         rect.setTop(0)
-        rect.setBottom(500)
+        rect.setBottom(1080)
         return rect
 
-    def updateGeometry(self):
+    def update(self, rect: QtCore.QRectF = ...) -> None:
         self.prepareGeometryChange()
+        super().update()
 
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None):
         # setPen
@@ -31,13 +32,11 @@ class QArrow(QGraphicsItem):
         brush.setColor(Qt.green)
         brush.setStyle(Qt.SolidPattern)
         QPainter.setBrush(brush)
-        source = QPointF(self.mapFromParent(self.m_chart.mapToPosition(QPoint(0, 0))))
-
-        dest = self.mapFromParent(self.m_chart.mapToPosition(self.dest))
+        source = QPointF(self.mapFromScene(self.m_chart.mapToPosition(QPoint(0, 0))))
+        dest = self.mapFromScene(self.m_chart.mapToPosition(self.dest))
         # print(self.dest)
         line = QLineF(source, dest)
         line.setLength(line.length() - 3)
-
         v = line.unitVector()
         v.setLength(2)
         v.translate(QPointF(line.dx(), line.dy()))

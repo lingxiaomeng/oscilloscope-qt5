@@ -1,5 +1,6 @@
 import typing
 
+from PyQt5 import QtCore
 from PyQt5.Qt import Qt
 from PyQt5.QtChart import QChart
 from PyQt5.QtCore import QRectF, QPointF, QRect
@@ -20,19 +21,18 @@ class Callout(QGraphicsItem):
         self.m_rect = QRectF()
         self.setZValue(11)
 
-
     def setText(self, text: str):
         self.m_text = text
         metrics = QFontMetrics(self.m_font)
         self.m_textRect = QRectF(metrics.boundingRect(QRect(0, 0, 150, 150), Qt.AlignLeft, self.m_text))
         self.m_textRect.translate(5, 5)
-        self.prepareGeometryChange()
         self.m_rect = QRectF(self.m_textRect.adjusted(-5, -5, 5, 5))
-        self.updateGeometry()
+        self.update()
 
-    def updateGeometry(self):
-        self.prepareGeometryChange()
+    def update(self, rect: QtCore.QRectF = ...) -> None:
+        # self.prepareGeometryChange()
         self.setPos(self.m_chart.mapToPosition(self.m_anchor) + QPointF(10, -50))
+        super().update()
 
     def boundingRect(self) -> QRectF:
         from_parent = self.mapFromParent(self.m_chart.mapToPosition(self.m_anchor))
@@ -47,6 +47,7 @@ class Callout(QGraphicsItem):
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget):
         path = QPainterPath()
         mr = self.m_rect
+
         path.addRoundedRect(mr, 5, 5)
 
         anchor = QPointF(self.mapFromParent(self.m_chart.mapToPosition(self.m_anchor)))
