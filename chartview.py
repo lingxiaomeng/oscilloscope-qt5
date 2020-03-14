@@ -1,7 +1,7 @@
 # coding:utf-8
 
 from PyQt5.QtChart import QChartView, QAbstractSeries, QChart
-from PyQt5.QtCore import QPointF, QRectF, QSizeF, QEvent, Qt
+from PyQt5.QtCore import QPointF, QRectF, QSizeF, QEvent, Qt, QPoint
 from PyQt5.QtGui import QMouseEvent, QWheelEvent, QResizeEvent, QPen, QColor, QPainter, QKeyEvent
 from PyQt5.QtWidgets import QHBoxLayout
 
@@ -39,14 +39,6 @@ class ChartView(QChartView):
     def setPolarChartview(self, chartview: QChartView):
         self.polar_chartview = chartview
 
-    # def update(self) -> None:
-    #     # for callout in self.m_callouts:
-    #     #     callout.update()
-    #     # for marker in self.marker_lines:
-    #     #     marker.update()
-    #     # self.chart().update()
-    #     super().update()
-
     def mouseMoveEvent(self, event: QMouseEvent):
         self.right_clicked = False
 
@@ -57,7 +49,7 @@ class ChartView(QChartView):
                 x = event.x() - self.x_old
                 y = event.y() - self.y_old
                 self.chart().scroll(-x, y)
-                self.chartview.chart().scroll(-x, y)
+                # self.chartview.chart().scroll(-x, y)
             self.x_old = event.x()
             self.y_old = event.y()
         time_min = self.chart().axisX().min()
@@ -70,17 +62,23 @@ class ChartView(QChartView):
 
     def mouseDoubleClickEvent(self, event) -> None:
         if event.button() == Qt.LeftButton:
+            x = round(self.chart().mapToValue(event.pos()).x())
             marker = MarkerLine(self.chart())
-            marker.m_anchor = self.chart().mapToValue(event.pos())
+            marker.m_anchor = QPoint(x, 0)
             marker.setZValue(0)
-            marker.setText(str(marker.m_anchor.x()))
+            marker.setText("%d" % marker.m_anchor.x())
             marker.show()
             self.scene().addItem(marker)
             self.marker_lines.append(marker)
-        else:
-            for item in self.marker_lines:
-                self.scene().removeItem(item)
-            self.marker_lines.clear()
+            if self.chart().series()[0]:
+                start = self.chart().series()[0].pointsVector()[0].x()
+                if len(self.chart().series()[0].pointsVector()) > x - start:
+                    y = self.chart().series()[0].at(x - start).y()
+                    yb = self.chartview.chart().series()[0].at(x - start).y()
+                    if self.objectName() == 'chart1':
+                        self.polar_chartview.updateArrow(y, yb)
+                    if self.objectName() == 'chart2':
+                        self.polar_chartview.updateArrow(yb, y)
         self.update()
         super().mouseDoubleClickEvent(event)
 
@@ -102,6 +100,10 @@ class ChartView(QChartView):
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
         self.update()
         super().mouseReleaseEvent(event)
+        if self.right_clicked:
+            for item in self.marker_lines:
+                self.scene().removeItem(item)
+            self.marker_lines.clear()
         time_min = self.chart().axisX().min()
         time_max = self.chart().axisX().max()
         self.chartview.chart().axisX().setRange(time_min, time_max)
@@ -126,11 +128,23 @@ class ChartView(QChartView):
             x = round(point.x())
             start = self.chart().series()[0].pointsVector()[0].x()
             y = self.chart().series()[0].at(x - start).y()
+            # y2 = self.chart().series()[0].at(x - start + 2).y()
+            y1 = self.chart().series()[0].at(x - start + 1).y()
+
             self.m_tooltip.setText("X: %d \nY: %f" % (x, y))
             self.m_tooltip.m_anchor = point
             self.m_tooltip.setZValue(2)
+            if y1 > y:
+                self.m_tooltip.adjust = QPointF(10, 70)
+            else:
+                self.m_tooltip.adjust = QPointF(10, -50)
             self.m_tooltip.update()
             self.m_tooltip.show()
+            yb = self.chartview.chart().series()[0].at(x - start).y()
+            if self.objectName() == 'chart1':
+                self.polar_chartview.updateArrow(y, yb)
+            if self.objectName() == 'chart2':
+                self.polar_chartview.updateArrow(yb, y)
         else:
             self.m_tooltip.hide()
         self.update()

@@ -20,6 +20,7 @@ class Callout(QGraphicsItem):
         self.m_textRect = QRectF()
         self.m_rect = QRectF()
         self.setZValue(11)
+        self.adjust = QPointF(10, -50)
 
     def setText(self, text: str):
         self.m_text = text
@@ -31,7 +32,7 @@ class Callout(QGraphicsItem):
 
     def update(self, rect: QtCore.QRectF = ...) -> None:
         # self.prepareGeometryChange()
-        self.setPos(self.m_chart.mapToPosition(self.m_anchor) + QPointF(10, -50))
+        self.setPos(self.m_chart.mapToPosition(self.m_anchor) + self.adjust)
         super().update()
 
     def boundingRect(self) -> QRectF:

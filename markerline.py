@@ -55,7 +55,7 @@ class MarkerLine(QGraphicsItem):
             painter.setPen(QColor('green'))
             painter.setBrush(QColor('green'))
             painter.drawLine(start_point, end_point)
-            painter.drawText(start_point.x(), start_point.y() - 10, '%.4f' % (self.m_anchor.x()))
+            painter.drawText(start_point.x(), start_point.y() - 10, self.m_text)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
         event.setAccepted(True)
