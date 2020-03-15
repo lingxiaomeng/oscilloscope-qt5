@@ -1,5 +1,6 @@
 # coding:utf-8
 import gc
+import os
 import random
 import sys
 
@@ -7,7 +8,8 @@ from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent, QFontMetrics
-from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableView, QTableWidget, QTableWidgetItem, QHeaderView, QFrame
+from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableView, QTableWidget, QTableWidgetItem, QHeaderView, QFrame, \
+    QLineEdit, QMessageBox
 
 from PolarChartView import PolarChartView
 from QTableWidgetNumItem import QTableWidgetNumItem
@@ -65,18 +67,36 @@ class MainUi(QtWidgets.QMainWindow):
         self.start_btn.setIcon(QIcon("image/start.png"))
         # self.control_layout.addWidget(self.start_btn, 0, 0, Qt.AlignTop | Qt.AlignLeft)
 
+        self.file_path = QLineEdit()
+        self.file_path.setReadOnly(False)
+        self.browse_btn = QPushButton('Browse')
+        self.save_btn = QPushButton('Save')
+        self.load_btn = QPushButton('Load')
+
+        self.browse_btn.clicked.connect(self.choose_path)
+        self.save_btn.clicked.connect(self.save_action)
+        self.load_btn.clicked.connect(self.load_action)
+
+        self.control_layout.addWidget(self.file_path, 0, 0)
+        self.control_layout.addWidget(self.browse_btn, 0, 1, Qt.AlignTop | Qt.AlignLeft)
+        self.control_layout.addWidget(self.save_btn, 1, 1, Qt.AlignTop | Qt.AlignLeft)
+        self.control_layout.addWidget(self.load_btn, 2, 1, Qt.AlignTop | Qt.AlignLeft)
+        self.control_layout.setColumnStretch(0, 4)
+        self.control_layout.setColumnStretch(1, 1)
+
         self.table = QTableWidget()
         self.table.setColumnCount(3)
         self.table.setFrameShape(QFrame.NoFrame)
         self.table.setHorizontalHeaderLabels(['x', 'magnitude', 'phase'])
-        # self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         # self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().resizeSection(0, 20)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # self.table.horizontalHeader().resizeSection(0, 20)
 
         self.table.verticalHeader().hide()
         self.table.hide()
-        self.control_layout.addWidget(self.table, 0, 0)
-        self.control_layout.setContentsMargins(10, 10, 10, 10)
+        # self.table.setMinimumWidth(350)
+        self.control_layout.addWidget(self.table, 1, 0, 14, 1, Qt.AlignTop)
+        self.control_layout.setContentsMargins(0, 0, 0, 0)
 
         self.init_chart()
         self.init_menu()
@@ -91,7 +111,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.stylesheet = file.read()
         self.setStyleSheet(self.stylesheet)
         self.setMouseTracking(True)
-        self.grabKeyboard()
+        # self.grabKeyboard()
 
     def init_menu(self):
 
@@ -116,6 +136,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.start_action.setIcon(QIcon('image/start.png'))
         self.stop_action.setIcon(QIcon('image/stop.png'))
         remove_line_action.setIcon(QIcon('image/return.png'))
+        reset_action.setIcon(QIcon('image/refresh.png'))
 
         file_menu.addAction(save_action)
         file_menu.addAction(load_action)
@@ -130,7 +151,7 @@ class MainUi(QtWidgets.QMainWindow):
         toolbar.addAction(self.stop_action)
         toolbar.addAction(setting_action)
         toolbar.addAction(remove_line_action)
-
+        toolbar.addAction(reset_action)
         toolbar.setMovable(False)
         toolbar.setObjectName('toolbar')
         self.addToolBar(toolbar)
@@ -242,27 +263,16 @@ class MainUi(QtWidgets.QMainWindow):
         self.table.setItem(row, 0, QTableWidgetNumItem(x))
         self.table.setItem(row, 1, QTableWidgetNumItem(mag))
         self.table.setItem(row, 2, QTableWidgetNumItem(phase))
-        w0 = self.table.columnWidth(0)
-        w1 = self.table.columnWidth(1)
-        w2 = self.table.columnWidth(2)
-        print(w1)
-        self.table.horizontalHeader().resizeSection(0, self.get_row_width(str(x), w0))
-        self.table.horizontalHeader().resizeSection(1, self.get_row_width(str(mag), w1))
-        self.table.horizontalHeader().resizeSection(2, self.get_row_width(str(phase), w2))
-
         count = self.table.verticalHeader().count()
+        self.table.sortItems(0, Qt.AscendingOrder)
+        self.table.show()
         scrollBarHeight = self.table.horizontalScrollBar().height()
         horizontalHeaderHeight = self.table.horizontalHeader().height()
         rowTotalHeight = 0
-        for i in range(count - 1):
-            rowTotalHeight = rowTotalHeight + self.table.verticalHeader().sectionSize(i)
+        for i in range(count):
+            rowTotalHeight = rowTotalHeight + self.table.rowHeight(i)
         self.table.setMaximumHeight(horizontalHeaderHeight + rowTotalHeight + scrollBarHeight)
-        w0 = self.table.columnWidth(0)
-        w1 = self.table.columnWidth(1)
-        w2 = self.table.columnWidth(2)
-        self.table.setMaximumWidth(w0 + w1 + w2)
-        self.table.sortItems(0, Qt.AscendingOrder)
-        self.table.show()
+
 
     def get_row_width(self, text: str, old_w: int):
         font = QFont()
@@ -271,9 +281,9 @@ class MainUi(QtWidgets.QMainWindow):
         return w if w > old_w else old_w
 
     def configuration_reset(self):
-        self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_min + self.configurations.time_max_range)
         self.chart1.axisY().setRange(self.configurations.mag_min, self.configurations.mag_max)
-        self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_min + self.configurations.time_max_range)
         self.chart2.axisY().setRange(self.configurations.phase_min, self.configurations.phase_max)
 
         data1 = list()
@@ -287,6 +297,50 @@ class MainUi(QtWidgets.QMainWindow):
         setting_window = SettingWindow(self, self.configurations)
         setting_window.show()
         # print("end")
+
+    def choose_path(self):
+        filename = QFileDialog.getOpenFileName(self, 'read file', "", "Qt Wave Files (*.qtwave)")
+        if filename[0] != '':
+            self.file_path.setText(filename[0])
+
+    def save_action(self):
+        f = open(self.file_path.text(), 'w')
+        for data in self.original_data_1:
+            f.write(str(data.y()) + ",")
+        f.write("\n")
+        for data in self.original_data_2:
+            f.write(str(data.y()) + ",")
+        f.write("\n")
+        f.close()
+        QMessageBox.information(self, "save succeed", "save succeed", QMessageBox.Ok)
+
+    def load_action(self):
+        name, ext = os.path.splitext(self.file_path.text())
+        print(ext)
+        if ext == '.qtwave':
+            f = open(self.file_path.text(), 'r')
+            data = f.read().split('\n')
+            print(data)
+            data1 = data[0].split(',')
+            data2 = data[1].split(',')
+            print(data1)
+            print(data2)
+            self.original_data_1 = list()
+            self.original_data_2 = list()
+            length = len(data1) - 1
+            print(length)
+            for i in range(len(data1) - 1):
+                self.original_data_1.append(QPointF(i, float(data1[i])))
+                self.original_data_2.append(QPointF(i, float(data2[i])))
+            self.configurations.update(0, length, length, 0, 360, 0, 10)
+            self.configuration_reset()
+            self.count = length
+            f.close()
+            QMessageBox.information(self, "load succeed", "load succeed", QMessageBox.Ok)
+            self.chart_view1.update()
+            self.chart_view2.update()
+        else:
+            QMessageBox.warning(self, "filetype error", "filetype error", QMessageBox.Ok)
 
     def save_data(self):
         filename = QFileDialog.getSaveFileName(self, 'save file', "", "Qt Wave Files (*.qtwave)")
@@ -321,12 +375,20 @@ class MainUi(QtWidgets.QMainWindow):
                 self.original_data_2.append(QPointF(i, float(data2[i])))
             self.series_1.replace(self.original_data_1)
             self.series_2.replace(self.original_data_2)
-            self.configurations.update(0, length, length, 0, 360, 0, 10)
+            self.configurations.update(0, length, self.configurations.time_max_range, 0, 360, 0, 10)
             self.configuration_reset()
             self.count = length
             f.close()
 
     def data_reset(self):
+        f = open('./tmp.qtwave', 'w')
+        for data in self.original_data_1:
+            f.write(str(data.y()) + ",")
+        f.write("\n")
+        for data in self.original_data_2:
+            f.write(str(data.y()) + ",")
+        f.write("\n")
+        f.close()
         self.configurations.update(0, 100, 100, 0, 360, 0, 10)
         self.original_data_1 = list()
         self.original_data_2 = list()
@@ -334,7 +396,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.series_2.replace(self.original_data_2)
         self.configuration_reset()
         self.count = 0
-        self.constellation_chart_view.arrow.hide()
+        self.constellation_chart_view.updateArrow(0, 0)
+        self.remove_marker_lines()
 
     def timer_slot(self):
         mag = random.random() * 3 + 5
@@ -359,10 +422,8 @@ class MainUi(QtWidgets.QMainWindow):
                 time_min = self.chart2.axisX().min()
                 time_max = self.chart2.axisX().max()
                 self.chart1.axisX().setRange(time_min, time_max)
-
             self.chart_view1.update()
             self.chart_view2.update()
-
         super().keyPressEvent(event)
 
     def remove_marker_lines(self):
@@ -374,6 +435,9 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart_view2.marker_lines = list()
         self.chart_view1.update()
         self.chart_view2.update()
+        self.table.clearContents()
+        self.table.model().removeRows(0, self.table.rowCount())
+        self.table.hide()
 
     def stop_slot(self):
         if self.is_stop:

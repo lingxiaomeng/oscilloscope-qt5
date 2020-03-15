@@ -11,7 +11,7 @@ class Configurations:
     def update(self, time_min, time_max, time_max_range, phase_min, phase_max, mag_min, mag_max):
         self.time_min = time_min
         self.time_max = time_max
-        self.time_max_range = time_max_range
+        self.time_max_range = time_max_range if time_max_range > 100 else 100
         self.phase_min = phase_min
         self.phase_max = phase_max
         self.mag_min = mag_min

@@ -14,6 +14,13 @@ QWidget#main {
     background-color: #606D80;
 }
 
+QTableWidget{
+    background-color: #606D80;
+}
+QTableWidget::item{
+    background-color:white;
+}
+
 QWidget#toolbar {
     background-color: #DCE0E6;
     /*border-bottom: 1px solid black;*/

@@ -80,6 +80,8 @@ class ChartView(QChartView):
                         self.parent.table_add_row(x, y, yb)
                     if self.objectName() == 'chart2':
                         self.polar_chartview.updateArrow(yb, y)
+                        self.parent.table_add_row(x, yb, y)
+
             self.update()
         super().mouseDoubleClickEvent(event)
 
