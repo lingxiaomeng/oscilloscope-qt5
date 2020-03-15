@@ -12,8 +12,9 @@ from markerline import MarkerLine
 
 
 class ChartView(QChartView):
-    def __init__(self, *__args, chart: QChart, data: list):
+    def __init__(self, *__args, chart: QChart, parent):
         super().__init__(*__args)
+        self.parent = parent
         self.polar_chartview = None
         self.chartview = None
         self.m_callouts = list()
@@ -27,7 +28,6 @@ class ChartView(QChartView):
         self.m_tooltip.hide()
         self.scene().addItem(self.m_tooltip)
         self.setMouseTracking(True)
-        self.data = data
         self.setRubberBand(QChartView.RectangleRubberBand)
         self.right_clicked = False
         self.setRenderHint(QPainter.Antialiasing)
@@ -77,6 +77,7 @@ class ChartView(QChartView):
                     yb = self.chartview.chart().series()[0].at(x - start).y()
                     if self.objectName() == 'chart1':
                         self.polar_chartview.updateArrow(y, yb)
+                        self.parent.table_add_row(x, y, yb)
                     if self.objectName() == 'chart2':
                         self.polar_chartview.updateArrow(yb, y)
             self.update()

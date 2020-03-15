@@ -6,6 +6,9 @@
 /*QPushButton#start_btu:hover {*/
 /*    background: #ff4a48;*/
 /*}*/
+QHeaderView::section{
+    background:#DCE0E6
+}
 
 QWidget#main {
     background-color: #606D80;

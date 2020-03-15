@@ -6,10 +6,11 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent
-from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar
+from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent, QFontMetrics
+from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableView, QTableWidget, QTableWidgetItem, QHeaderView, QFrame
 
 from PolarChartView import PolarChartView
+from QTableWidgetNumItem import QTableWidgetNumItem
 from chartview import ChartView
 from configurations import Configurations
 from settingwindow import SettingWindow
@@ -45,8 +46,8 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.chart1 = QChart()
         self.chart2 = QChart()
-        self.chart_view1 = ChartView(chart=self.chart1, data=self.original_data_1)
-        self.chart_view2 = ChartView(chart=self.chart2, data=self.original_data_2)
+        self.chart_view1 = ChartView(chart=self.chart1, parent=self)
+        self.chart_view2 = ChartView(chart=self.chart2, parent=self)
         self.constellation_chart = QPolarChart()
         self.constellation_chart_view = PolarChartView(chart=self.constellation_chart)
 
@@ -63,6 +64,18 @@ class MainUi(QtWidgets.QMainWindow):
         self.start_btn = QPushButton("Start")
         self.start_btn.setIcon(QIcon("image/start.png"))
         # self.control_layout.addWidget(self.start_btn, 0, 0, Qt.AlignTop | Qt.AlignLeft)
+
+        self.table = QTableWidget()
+        self.table.setColumnCount(3)
+        self.table.setFrameShape(QFrame.NoFrame)
+        self.table.setHorizontalHeaderLabels(['x', 'magnitude', 'phase'])
+        # self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        # self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().resizeSection(0, 20)
+
+        self.table.verticalHeader().hide()
+        self.table.hide()
+        self.control_layout.addWidget(self.table, 0, 0)
         self.control_layout.setContentsMargins(10, 10, 10, 10)
 
         self.init_chart()
@@ -223,6 +236,40 @@ class MainUi(QtWidgets.QMainWindow):
         radial_axis.setLabelsBrush(Qt.white)
         self.constellation_chart_view.setRenderHint(QPainter.Antialiasing)
 
+    def table_add_row(self, x, mag, phase):
+        row = self.table.rowCount()
+        self.table.setRowCount(row + 1)
+        self.table.setItem(row, 0, QTableWidgetNumItem(x))
+        self.table.setItem(row, 1, QTableWidgetNumItem(mag))
+        self.table.setItem(row, 2, QTableWidgetNumItem(phase))
+        w0 = self.table.columnWidth(0)
+        w1 = self.table.columnWidth(1)
+        w2 = self.table.columnWidth(2)
+        print(w1)
+        self.table.horizontalHeader().resizeSection(0, self.get_row_width(str(x), w0))
+        self.table.horizontalHeader().resizeSection(1, self.get_row_width(str(mag), w1))
+        self.table.horizontalHeader().resizeSection(2, self.get_row_width(str(phase), w2))
+
+        count = self.table.verticalHeader().count()
+        scrollBarHeight = self.table.horizontalScrollBar().height()
+        horizontalHeaderHeight = self.table.horizontalHeader().height()
+        rowTotalHeight = 0
+        for i in range(count - 1):
+            rowTotalHeight = rowTotalHeight + self.table.verticalHeader().sectionSize(i)
+        self.table.setMaximumHeight(horizontalHeaderHeight + rowTotalHeight + scrollBarHeight)
+        w0 = self.table.columnWidth(0)
+        w1 = self.table.columnWidth(1)
+        w2 = self.table.columnWidth(2)
+        self.table.setMaximumWidth(w0 + w1 + w2)
+        self.table.sortItems(0, Qt.AscendingOrder)
+        self.table.show()
+
+    def get_row_width(self, text: str, old_w: int):
+        font = QFont()
+        fm = QFontMetrics(font)
+        w = fm.width(text) + 20
+        return w if w > old_w else old_w
+
     def configuration_reset(self):
         self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
         self.chart1.axisY().setRange(self.configurations.mag_min, self.configurations.mag_max)
@@ -231,8 +278,8 @@ class MainUi(QtWidgets.QMainWindow):
 
         data1 = list()
         data2 = list()
-        data1 += (self.original_data_1[self.configurations.time_min:self.configurations.time_max])
-        data2 += (self.original_data_2[self.configurations.time_min:self.configurations.time_max])
+        data1 += (self.original_data_1[self.configurations.time_min:])
+        data2 += (self.original_data_2[self.configurations.time_min:])
         self.series_1.replace(data1)
         self.series_2.replace(data2)
 
@@ -339,10 +386,10 @@ class MainUi(QtWidgets.QMainWindow):
             self.configurations.time_max = self.count if self.count > self.configurations.time_max_range else self.configurations.time_max_range
             self.configurations.time_min = self.configurations.time_max - self.configurations.time_max_range
             self.is_stop = False
-            data1 = self.original_data_1[self.configurations.time_min:self.configurations.time_max]
-            data2 = self.original_data_2[self.configurations.time_min:self.configurations.time_max]
-            self.series_1.replace(data1)
-            self.series_2.replace(data2)
+            # data1 = self.original_data_1[self.configurations.time_min:self.configurations.time_max]
+            # data2 = self.original_data_2[self.configurations.time_min:self.configurations.time_max]
+            # self.series_1.replace(data1)
+            # self.series_2.replace(data2)
         else:
             self.start_action.setEnabled(True)
             self.stop_action.setEnabled(False)
@@ -353,29 +400,28 @@ class MainUi(QtWidgets.QMainWindow):
             self.is_stop = True
 
     def update_data(self, mag, phase):
-        old_data_1 = self.series_1.pointsVector()
-        old_data_2 = self.series_2.pointsVector()
-        data3 = list()
-        data3.append(QPoint(phase, mag))
-        data3.append(QPoint(0, 0))
-        data_length = len(old_data_1)
-        data_1 = old_data_1
-        data_2 = old_data_2
+        # old_data_1 = self.series_1.pointsVector()
+        # old_data_2 = self.series_2.pointsVector()
+        # data3 = list()
+        # data3.append(QPoint(phase, mag))
+        # data3.append(QPoint(0, 0))
+        data_length = len(self.series_1)
 
-        if not self.is_stop and data_length > 200:
-            data_1 = data_1[-200:-1]
-            data_2 = data_2[-200:-1]
+        # if not self.is_stop and data_length > 200:
+        #     old_data_1 = old_data_1[-200:-1]
+        #     old_data_2 = old_data_2[-200:-1]
 
         for i in range(1):
             point_1 = QPointF(self.count, mag)
             point_2 = QPointF(self.count, phase)
-            data_1.append(point_1)
-            data_2.append(point_2)
+            self.series_1.append(point_1)
+            self.series_2.append(point_2)
             self.original_data_1.append(point_1)
             self.original_data_2.append(point_2)
-        if not self.is_stop:
-            self.series_1.replace(data_1)
-            self.series_2.replace(data_2)
+        # if not self.is_stop:
+        #     self.series_1.pointsVector()
+        #     self.series_1.replace(data_1)
+        #     self.series_2.replace(data_2)
         self.count += 1
         if data_length > self.configurations.time_max_range and not self.is_stop:
             self.configurations.time_min += 1
