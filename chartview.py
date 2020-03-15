@@ -68,7 +68,7 @@ class ChartView(QChartView):
             marker.setZValue(0)
             marker.setText("%d" % marker.m_anchor.x())
             marker.show()
-            self.scene().addItem(marker)
+            self.chart().scene().addItem(marker)
             self.marker_lines.append(marker)
             if self.chart().series()[0]:
                 start = self.chart().series()[0].pointsVector()[0].x()
@@ -79,7 +79,7 @@ class ChartView(QChartView):
                         self.polar_chartview.updateArrow(y, yb)
                     if self.objectName() == 'chart2':
                         self.polar_chartview.updateArrow(yb, y)
-        self.update()
+            self.update()
         super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent):
@@ -88,7 +88,6 @@ class ChartView(QChartView):
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.RightButton, Qt.RightButton, Qt.NoModifier)
         elif event.button() and event.button() == Qt.RightButton:
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
-            self.right_clicked = True
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
@@ -98,12 +97,10 @@ class ChartView(QChartView):
             # event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.RightButton, Qt.RightButton, Qt.NoModifier)
         else:
             event = QMouseEvent(QEvent.MouseButtonPress, event.pos(), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+
         self.update()
         super().mouseReleaseEvent(event)
-        if self.right_clicked:
-            for item in self.marker_lines:
-                self.scene().removeItem(item)
-            self.marker_lines.clear()
+
         time_min = self.chart().axisX().min()
         time_max = self.chart().axisX().max()
         self.chartview.chart().axisX().setRange(time_min, time_max)
@@ -135,7 +132,7 @@ class ChartView(QChartView):
             self.m_tooltip.m_anchor = point
             self.m_tooltip.setZValue(2)
             if y1 > y:
-                self.m_tooltip.adjust = QPointF(10, 70)
+                self.m_tooltip.adjust = QPointF(10, 50)
             else:
                 self.m_tooltip.adjust = QPointF(10, -50)
             self.m_tooltip.update()

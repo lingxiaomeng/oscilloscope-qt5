@@ -26,6 +26,8 @@ class PolarChartView(QChartView):
         super().update()
 
     def updateArrow(self, mag, phase):
+        self.chart().setTitle("Magnitude:%.4f  Phase:%8f" % (mag, phase))
+
         self.x = phase
         self.y = mag
         self.arrow.dest = QPointF(self.x, self.y)

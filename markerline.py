@@ -13,6 +13,7 @@ class MarkerLine(QGraphicsItem):
 
     def __init__(self, parent: QChart):
         super().__init__()
+        self.marker_line = True
         self.m_chart = parent
         self.m_text = ''
         self.m_anchor = QPointF()
@@ -26,6 +27,7 @@ class MarkerLine(QGraphicsItem):
         self.m_textRect.translate(5, 5)
         self.prepareGeometryChange()
         self.update()
+
 
     def boundingRect(self) -> QRectF:
         xmin = self.m_chart.axisX().min()
@@ -52,8 +54,8 @@ class MarkerLine(QGraphicsItem):
         start_point = QPointF(self.mapFromScene(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), self.m_chart.axisY().max()))))
         end_point = QPointF(self.mapFromScene(self.m_chart.mapToPosition(QPointF(self.m_anchor.x(), self.m_chart.axisY().min()))))
         if self.boundingRect().left() <= start_point.x() <= self.boundingRect().right():
-            painter.setPen(QColor('green'))
-            painter.setBrush(QColor('green'))
+            painter.setPen(QColor(0x567EBB))
+            painter.setBrush(QColor(0x567EBB))
             painter.drawLine(start_point, end_point)
             painter.drawText(start_point.x(), start_point.y() - 10, self.m_text)
 

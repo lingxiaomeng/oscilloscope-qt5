@@ -1,4 +1,5 @@
 # coding:utf-8
+import gc
 import random
 import sys
 
@@ -6,7 +7,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent
-from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout
+from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar
 
 from PolarChartView import PolarChartView
 from chartview import ChartView
@@ -18,6 +19,8 @@ class MainUi(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.stop_action = QAction("Stop", self)
+        self.start_action = QAction("Start", self)
         self.setObjectName('main')
 
         self.configurations = Configurations()
@@ -58,8 +61,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.timer = QTimer()
 
         self.start_btn = QPushButton("Start")
-        self.start_btn.setIcon(QIcon("start.png"))
-        self.control_layout.addWidget(self.start_btn, 0, 0, Qt.AlignTop | Qt.AlignLeft)
+        self.start_btn.setIcon(QIcon("image/start.png"))
+        # self.control_layout.addWidget(self.start_btn, 0, 0, Qt.AlignTop | Qt.AlignLeft)
         self.control_layout.setContentsMargins(10, 10, 10, 10)
 
         self.init_chart()
@@ -78,31 +81,52 @@ class MainUi(QtWidgets.QMainWindow):
         self.grabKeyboard()
 
     def init_menu(self):
+
         file_menu = self.menuBar().addMenu('File')
+        action_menu = self.menuBar().addMenu('Action')
+
         save_action = QAction("Save", self)
         load_action = QAction("Load", self)
         reset_action = QAction("Reset", self)
+        setting_action = QAction("Settings", self)
+        remove_line_action = QAction("Remove", self)
 
         save_action.triggered.connect(self.save_data)
         load_action.triggered.connect(self.load_data)
         reset_action.triggered.connect(self.data_reset)
+        self.start_action.triggered.connect(self.stop_slot)
+        self.stop_action.triggered.connect(self.stop_slot)
+        setting_action.triggered.connect(self.configuration_setting)
+        remove_line_action.triggered.connect(self.remove_marker_lines)
+
+        setting_action.setIcon(QIcon('image/setting.png'))
+        self.start_action.setIcon(QIcon('image/start.png'))
+        self.stop_action.setIcon(QIcon('image/stop.png'))
+        remove_line_action.setIcon(QIcon('image/return.png'))
+
         file_menu.addAction(save_action)
         file_menu.addAction(load_action)
-
-        action_menu = self.menuBar().addMenu('Action')
-        self.start_action = QAction("Start", self)
-        # option_menu = self.menuBar().addMenu('Options')
-        setting_action = QAction("Settings", self)
         file_menu.addAction(setting_action)
         action_menu.addAction(self.start_action)
+        action_menu.addAction(self.stop_action)
         action_menu.addAction(reset_action)
 
-        self.start_action.triggered.connect(self.stop_slot)
-        setting_action.triggered.connect(self.configuration_setting)
+        toolbar = QToolBar()
+        toolbar.setMaximumHeight(30)
+        toolbar.addAction(self.start_action)
+        toolbar.addAction(self.stop_action)
+        toolbar.addAction(setting_action)
+        toolbar.addAction(remove_line_action)
+
+        toolbar.setMovable(False)
+        toolbar.setObjectName('toolbar')
+        self.addToolBar(toolbar)
 
     def init_chart_background(self, qchart: QChart, series: QAbstractSeries):
-        pen = QPen(QColor('yellow'))
-        background_brush = QBrush(Qt.black)
+
+        # pen = QPen(QColor(0x567EBB))
+        pen = QPen(QColor(0xCAFF42))
+        background_brush = QBrush(0x1F1F20)
         qchart.setBackgroundBrush(background_brush)
         pen.setWidthF(2)
 
@@ -189,7 +213,7 @@ class MainUi(QtWidgets.QMainWindow):
         series.attachAxis(angular_axis)
 
         self.constellation_chart.setTitleBrush(Qt.white)
-        self.constellation_chart.setBackgroundBrush(Qt.black)
+        self.constellation_chart.setBackgroundBrush(QBrush(0x1F1F20))
 
         angular_axis.setLinePen(Qt.white)
         angular_axis.setGridLinePen(Qt.white)
@@ -270,7 +294,6 @@ class MainUi(QtWidgets.QMainWindow):
         phase = random.random() * 360
 
         if not self.is_stop:
-            self.constellation_chart.setTitle("Magnitude:%.4f  Phase:%8f" % (mag, phase))
             self.constellation_chart_view.updateArrow(mag, phase)
             self.update_data(mag, phase)
             self.chart_view1.update()
@@ -289,16 +312,30 @@ class MainUi(QtWidgets.QMainWindow):
                 time_min = self.chart2.axisX().min()
                 time_max = self.chart2.axisX().max()
                 self.chart1.axisX().setRange(time_min, time_max)
+
             self.chart_view1.update()
             self.chart_view2.update()
+
         super().keyPressEvent(event)
+
+    def remove_marker_lines(self):
+        for item in self.chart_view1.marker_lines:
+            self.chart_view1.scene().items().remove(item)
+        for item in self.chart_view2.marker_lines:
+            self.chart_view2.scene().items().remove(item)
+        self.chart_view1.marker_lines = list()
+        self.chart_view2.marker_lines = list()
+        self.chart_view1.update()
+        self.chart_view2.update()
 
     def stop_slot(self):
         if self.is_stop:
             self.timer.start(50)
-            self.start_action.setText('Stop')
+            self.start_action.setEnabled(False)
+            self.stop_action.setEnabled(True)
+            # self.start_action.setText('Stop')
             self.start_btn.setText('Stop')
-            self.start_btn.setIcon(QIcon("stop.png"))
+            self.start_btn.setIcon(QIcon("image/stop.png"))
             self.configurations.time_max = self.count if self.count > self.configurations.time_max_range else self.configurations.time_max_range
             self.configurations.time_min = self.configurations.time_max - self.configurations.time_max_range
             self.is_stop = False
@@ -307,10 +344,12 @@ class MainUi(QtWidgets.QMainWindow):
             self.series_1.replace(data1)
             self.series_2.replace(data2)
         else:
+            self.start_action.setEnabled(True)
+            self.stop_action.setEnabled(False)
             self.timer.stop()
-            self.start_btn.setIcon(QIcon("start.png"))
+            self.start_btn.setIcon(QIcon("image/start.png"))
             self.start_btn.setText('Start')
-            self.start_action.setText('Start')
+            # self.start_action.setText('Start')
             self.is_stop = True
 
     def update_data(self, mag, phase):
@@ -348,7 +387,7 @@ class MainUi(QtWidgets.QMainWindow):
 def main():
     app = QtWidgets.QApplication(sys.argv)
     gui = MainUi()
-    icon = QIcon("start.png")
+    icon = QIcon("image/start.png")
     # icon.addPixmap(QPixmap("my.ico"),QIcon.Normal, QIcon.Off)
     gui.setWindowIcon(icon)
     gui.show()

@@ -7,15 +7,27 @@
 /*    background: #ff4a48;*/
 /*}*/
 
-QWidget#main{
-    background-color: gray;
+QWidget#main {
+    background-color: #606D80;
 }
-QPushButton{
-        color: gray;
+
+QWidget#toolbar {
+    background-color: #DCE0E6;
+    /*border-bottom: 1px solid black;*/
+    /*border-top: 1px solid white;*/
+    /*border-bottom: 1px solid white;*/
+    /*border-right: 1px solid white;*/
+    /*border-left: 1px solid white;*/
+    /*border-top-right-radius: 10px;*/
+    /*border-bottom-right-radius: 10px;*/
+}
+
+QIcon{
+    background-color: rgba(0, 0, 0, 0);
 }
 
 QWidget#chart1 {
-    background-color: black;
+    background-color: #1F1F20;
     /*border-top: 1px solid white;*/
     /*border-bottom: 1px solid white;*/
     /*border-right: 1px solid white;*/
@@ -24,7 +36,7 @@ QWidget#chart1 {
     /*border-bottom-right-radius: 10px;*/
 }
 QWidget#chart {
-    background-color: black;
+    background-color: #1F1F20;
     border-top: 1px solid black;
     border-bottom: 1px solid black;
     border-right: 1px solid black;
@@ -35,7 +47,7 @@ QWidget#chart {
 
 
 QWidget#chart2 {
-    background-color: black;
+    background-color: #1F1F20;
     border-top: 1px solid black;
     border-bottom: 1px solid black;
     border-right: 1px solid black;
@@ -45,7 +57,7 @@ QWidget#chart2 {
 }
 
 QWidget#chart3 {
-    background-color: black;
+    background-color: #1F1F20;
     border-top: 1px solid black;
     border-bottom: 1px solid black;
     border-right: 1px solid black;

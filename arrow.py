@@ -1,5 +1,5 @@
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QPen, QBrush
+from PyQt5.QtGui import QPen, QBrush, QColor
 from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsItem
 from PyQt5 import QtCore
 
@@ -23,13 +23,12 @@ class QArrow(QGraphicsItem):
 
     def paint(self, QPainter, QStyleOptionGraphicsItem, QWidget_widget=None):
         # setPen
-        pen = QPen(Qt.green)
+        pen = QPen(QColor(0x00DFFC))
         pen.setWidth(3)
         pen.setJoinStyle(Qt.MiterJoin)
         QPainter.setPen(pen)
         # setBrush
-        brush = QBrush()
-        brush.setColor(Qt.green)
+        brush = QBrush(0x00DFFC)
         brush.setStyle(Qt.SolidPattern)
         QPainter.setBrush(brush)
         source = QPointF(self.mapFromScene(self.m_chart.mapToPosition(QPoint(0, 0))))
