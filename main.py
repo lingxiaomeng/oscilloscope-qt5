@@ -87,11 +87,10 @@ class MainUi(QtWidgets.QMainWindow):
         self.table = QTableWidget()
         self.table.setColumnCount(3)
         self.table.setFrameShape(QFrame.NoFrame)
-        self.table.setHorizontalHeaderLabels(['x', 'magnitude', 'phase'])
+        self.table.setHorizontalHeaderLabels(['t', 'magnitude', 'phase'])
         # self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        # self.table.horizontalHeader().resizeSection(0, 20)
-
+        # self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.verticalHeader().hide()
         self.table.hide()
         # self.table.setMinimumWidth(350)
@@ -273,7 +272,6 @@ class MainUi(QtWidgets.QMainWindow):
             rowTotalHeight = rowTotalHeight + self.table.rowHeight(i)
         self.table.setMaximumHeight(horizontalHeaderHeight + rowTotalHeight + scrollBarHeight)
 
-
     def get_row_width(self, text: str, old_w: int):
         font = QFont()
         fm = QFontMetrics(font)
@@ -304,31 +302,29 @@ class MainUi(QtWidgets.QMainWindow):
             self.file_path.setText(filename[0])
 
     def save_action(self):
-        f = open(self.file_path.text(), 'w')
-        for data in self.original_data_1:
-            f.write(str(data.y()) + ",")
-        f.write("\n")
-        for data in self.original_data_2:
-            f.write(str(data.y()) + ",")
-        f.write("\n")
-        f.close()
-        QMessageBox.information(self, "save succeed", "save succeed", QMessageBox.Ok)
+        try:
+            f = open(self.file_path.text(), 'w')
+            for data in self.original_data_1:
+                f.write(str(data.y()) + ",")
+            f.write("\n")
+            for data in self.original_data_2:
+                f.write(str(data.y()) + ",")
+            f.write("\n")
+            f.close()
+            QMessageBox.information(self, "save succeed", "save succeed", QMessageBox.Ok)
+        except:
+            QMessageBox.warning(self, "save failed", "save failed", QMessageBox.Ok)
 
     def load_action(self):
         name, ext = os.path.splitext(self.file_path.text())
-        print(ext)
         if ext == '.qtwave':
             f = open(self.file_path.text(), 'r')
             data = f.read().split('\n')
-            print(data)
             data1 = data[0].split(',')
             data2 = data[1].split(',')
-            print(data1)
-            print(data2)
             self.original_data_1 = list()
             self.original_data_2 = list()
             length = len(data1) - 1
-            print(length)
             for i in range(len(data1) - 1):
                 self.original_data_1.append(QPointF(i, float(data1[i])))
                 self.original_data_2.append(QPointF(i, float(data2[i])))
@@ -336,7 +332,7 @@ class MainUi(QtWidgets.QMainWindow):
             self.configuration_reset()
             self.count = length
             f.close()
-            QMessageBox.information(self, "load succeed", "load succeed", QMessageBox.Ok)
+            # QMessageBox.information(self, "load succeed", "load succeed", QMessageBox.Ok)
             self.chart_view1.update()
             self.chart_view2.update()
         else:
@@ -359,14 +355,10 @@ class MainUi(QtWidgets.QMainWindow):
     def load_data(self):
         filename = QFileDialog.getOpenFileName(self, 'read file', "", "Qt Wave Files (*.qtwave)")
         if filename[0] != '':
-            print(filename)
             f = open(filename[0], 'r')
             data = f.read().split('\n')
-            print(data)
             data1 = data[0].split(',')
             data2 = data[1].split(',')
-            print(data1)
-            print(data2)
             self.original_data_1 = list()
             self.original_data_2 = list()
             length = len(data1) - 1
