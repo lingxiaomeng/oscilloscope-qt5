@@ -32,18 +32,49 @@ QTableWidget {
 
 QWidget#toolbar {
     background-color: #DCE0E6;
-    /*border-bottom: 1px solid black;*/
-    /*border-top: 1px solid white;*/
-    /*border-bottom: 1px solid white;*/
-    /*border-right: 1px solid white;*/
-    /*border-left: 1px solid white;*/
-    /*border-top-right-radius: 10px;*/
-    /*border-bottom-right-radius: 10px;*/
 }
 
-QIcon {
-    background-color: rgba(0, 0, 0, 0);
+/*QIcon {*/
+/*    background-color: rgba(0, 0, 0, 0);*/
+/*}*/
+
+QWidget#c1 {
+    background-color: #606D80;
 }
+
+QWidget#c2 {
+    /*background-color: #606D80;*/
+}
+
+QTabWidget {
+    border: 0px;
+}
+
+QTabWidget::frame {
+    background-color: white;
+}
+
+QTabBar::tab {
+    background-color: #DCE0E6;
+
+    border: 2px solid #C4C4C3;
+    border-bottom-color: #C2C7CB; /* same as the pane color */
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    min-width: 8ex;
+    padding: 2px;
+}
+
+QTabBar::tab:selected, QTabBar::tab:hover {
+    background-color: white;
+
+}
+
+QTabBar::tab:selected {
+    border-color: #9B9B9B;
+    border-bottom-color: #C2C7CB; /* same as pane color */
+}
+
 
 QWidget#chart1 {
     background-color: #1F1F20;

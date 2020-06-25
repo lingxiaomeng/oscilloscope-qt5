@@ -9,7 +9,7 @@ from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent, QFontMetrics
 from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableView, QTableWidget, QTableWidgetItem, QHeaderView, QFrame, \
-    QLineEdit, QMessageBox
+    QLineEdit, QMessageBox, QTabWidget, QWidget, QLabel
 
 from PolarChartView import PolarChartView
 from QTableWidgetNumItem import QTableWidgetNumItem
@@ -40,7 +40,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_widget.setLayout(self.main_layout)  # 设置窗口主部件布局为网格布局
         self.setCentralWidget(self.main_widget)  # 设置窗口主部件
         self.main_layout.setSpacing(10)  # 去除缝隙
-        self.main_layout.addLayout(self.control_layout, 1, 1)
+        self.controlTab = QTabWidget()
+        self.main_layout.addWidget(self.controlTab, 1, 1)
         self.main_layout.setColumnStretch(0, 2)
         self.main_layout.setColumnStretch(1, 1)
         self.main_layout.setRowStretch(0, 1)
@@ -72,11 +73,41 @@ class MainUi(QtWidgets.QMainWindow):
         self.browse_btn = QPushButton('Browse')
         self.save_btn = QPushButton('Save')
         self.load_btn = QPushButton('Load')
+        self.spi_id1 = QLineEdit()
+        self.spi_id2 = QLineEdit()
+        self.spi_ok = QPushButton("Send")
 
         self.browse_btn.clicked.connect(self.choose_path)
         self.save_btn.clicked.connect(self.save_action)
         self.load_btn.clicked.connect(self.load_action)
 
+        self.initControlTab()
+        self.init_chart()
+        self.init_menu()
+        self.init_constellation_diagram()
+        self.timer.timeout.connect(self.timer_slot)
+        # self.timer.start(50)
+
+        self.start_btn.clicked.connect(self.stop_slot)
+        self.start_btn.setObjectName("start_btu")
+
+        file = open('stylesheet.css')
+        self.stylesheet = file.read()
+        self.setStyleSheet(self.stylesheet)
+        self.setMouseTracking(True)
+        # self.grabKeyboard()
+
+    def initControlTab(self):
+
+        control_widget = QWidget()
+        control_widget.setObjectName("c1")
+        spi_control_widget = QWidget()
+        spi_control_widget.setObjectName("c2")
+        self.controlTab.addTab(control_widget, 'Main')
+        self.controlTab.addTab(spi_control_widget, 'SPI')
+        self.controlTab.setObjectName("c0")
+
+        control_widget.setLayout(self.control_layout)
         self.control_layout.addWidget(self.file_path, 0, 0)
         self.control_layout.addWidget(self.browse_btn, 0, 1, Qt.AlignTop | Qt.AlignLeft)
         self.control_layout.addWidget(self.save_btn, 1, 1, Qt.AlignTop | Qt.AlignLeft)
@@ -95,22 +126,16 @@ class MainUi(QtWidgets.QMainWindow):
         self.table.hide()
         # self.table.setMinimumWidth(350)
         self.control_layout.addWidget(self.table, 1, 0, 14, 1, Qt.AlignTop)
-        self.control_layout.setContentsMargins(0, 0, 0, 0)
+        self.control_layout.setContentsMargins(0, 5, 0, 0)
 
-        self.init_chart()
-        self.init_menu()
-        self.init_constellation_diagram()
-        self.timer.timeout.connect(self.timer_slot)
-        # self.timer.start(50)
-
-        self.start_btn.clicked.connect(self.stop_slot)
-        self.start_btn.setObjectName("start_btu")
-
-        file = open('stylesheet.css')
-        self.stylesheet = file.read()
-        self.setStyleSheet(self.stylesheet)
-        self.setMouseTracking(True)
-        # self.grabKeyboard()
+        spi_layout = QGridLayout()
+        spi_control_widget.setLayout(spi_layout)
+        spi_control_widget.setContentsMargins(0, 5, 0, 0)
+        spi_layout.addWidget(QLabel("ID 1"), 0, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("ID 2"), 1, 0,  Qt.AlignCenter)
+        spi_layout.addWidget(self.spi_id1, 0, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.spi_id2, 1, 1,  Qt.AlignCenter)
+        spi_layout.addWidget(self.spi_ok, 1, 2, Qt.AlignCenter)
 
     def init_menu(self):
 
@@ -328,7 +353,7 @@ class MainUi(QtWidgets.QMainWindow):
             for i in range(len(data1) - 1):
                 self.original_data_1.append(QPointF(i, float(data1[i])))
                 self.original_data_2.append(QPointF(i, float(data2[i])))
-            self.configurations.update(0, length, length, 0, 360, 0, 10)
+            self.configurations.update(0, length, self.configurations.time_max_range, 0, 360, 0, 10)
             self.configuration_reset()
             self.count = length
             f.close()
@@ -492,6 +517,7 @@ def main():
     icon = QIcon("image/start.png")
     # icon.addPixmap(QPixmap("my.ico"),QIcon.Normal, QIcon.Off)
     gui.setWindowIcon(icon)
+    gui.setWindowTitle('Oscilloscope')
     gui.show()
     sys.exit(app.exec_())
 
