@@ -1,4 +1,4 @@
-import socket
+from socket import *
 
 from PyQt5.QtCore import QThread, QMutexLocker, QMutex
 from PyQt5.QtNetwork import QUdpSocket, QHostAddress
@@ -22,14 +22,14 @@ class UdpThread(QThread):
         self.receive = False
         if not self.s:
             print("new socket")
-            self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.s = socket(AF_INET, SOCK_DGRAM)
             self.s.bind(('127.0.0.1', 5555))
         try:
             print('send')
             self.s.sendto(b'FS', server_addr)
-        except socket.error:
+        except timeout:
             print('error')
-        except Exception:
+        except:
             print('exception')
 
     def run(self) -> None:
