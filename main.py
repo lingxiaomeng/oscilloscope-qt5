@@ -16,6 +16,7 @@ from QTableWidgetNumItem import QTableWidgetNumItem
 from chartview import ChartView
 from configurations import Configurations
 from settingwindow import SettingWindow
+from thread_udp import UdpThread
 
 
 class MainUi(QtWidgets.QMainWindow):
@@ -31,6 +32,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.original_data_1 = list()
         self.original_data_2 = list()
         self.original_data_3 = list()
+        self.udpThread = UdpThread(self.original_data_1, self.original_data_2, self.original_data_3)
+
         self.is_stop = True
         # self.setMinimumSize(1000, 740)
 
@@ -132,9 +135,9 @@ class MainUi(QtWidgets.QMainWindow):
         spi_control_widget.setLayout(spi_layout)
         spi_control_widget.setContentsMargins(0, 5, 0, 0)
         spi_layout.addWidget(QLabel("ID 1"), 0, 0, Qt.AlignCenter)
-        spi_layout.addWidget(QLabel("ID 2"), 1, 0,  Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("ID 2"), 1, 0, Qt.AlignCenter)
         spi_layout.addWidget(self.spi_id1, 0, 1, Qt.AlignCenter)
-        spi_layout.addWidget(self.spi_id2, 1, 1,  Qt.AlignCenter)
+        spi_layout.addWidget(self.spi_id2, 1, 1, Qt.AlignCenter)
         spi_layout.addWidget(self.spi_ok, 1, 2, Qt.AlignCenter)
 
     def init_menu(self):
@@ -458,7 +461,9 @@ class MainUi(QtWidgets.QMainWindow):
 
     def stop_slot(self):
         if self.is_stop:
-            self.timer.start(50)
+            self.udpThread.start()
+
+            self.timer.start(1)
             self.start_action.setEnabled(False)
             self.stop_action.setEnabled(True)
             # self.start_action.setText('Stop')
@@ -472,6 +477,7 @@ class MainUi(QtWidgets.QMainWindow):
             # self.series_1.replace(data1)
             # self.series_2.replace(data2)
         else:
+            self.udpThread.stopImmediately()
             self.start_action.setEnabled(True)
             self.stop_action.setEnabled(False)
             self.timer.stop()
