@@ -478,6 +478,7 @@ class MainUi(QtWidgets.QMainWindow):
             # self.series_2.replace(data2)
         else:
             self.udpThread.stopImmediately()
+
             self.start_action.setEnabled(True)
             self.stop_action.setEnabled(False)
             self.timer.stop()

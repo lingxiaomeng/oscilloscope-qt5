@@ -20,19 +20,30 @@ class UdpThread(QThread):
 
     def stopImmediately(self):
         self.receive = False
+        if not self.s:
+            print("new socket")
+            self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.s.bind(('127.0.0.1', 5555))
+        try:
+            print('send')
+            self.s.sendto(b'FS', server_addr)
+        except socket.error:
+            print('error')
+        except Exception:
+            print('exception')
 
     def run(self) -> None:
         print("start thread")
         # socket = QUdpSocket()
         # result = socket.bind(QHostAddress("127.0.0.1"), 5555)
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.s.bind(('127.0.0.1', 5555))
+        if not self.s:
+            self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.s.bind(('127.0.0.1', 5555))
 
         while self.receive:
             data, addr = self.s.recvfrom(1024)
             print(data)
-        self.s.close()
-        del self.s
+        # self.s.close()
 
 # include <QThread>
 # include <QtCore>
