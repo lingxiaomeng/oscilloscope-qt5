@@ -24,20 +24,22 @@ class UdpThread(QThread):
             print("new socket")
             self.s = socket(AF_INET, SOCK_DGRAM)
             self.s.bind(('127.0.0.1', 5555))
+
         try:
             print('send')
             self.s.sendto(b'FS', server_addr)
         except timeout:
             print('error')
-        except:
+        except Exception:
             print('exception')
+
 
     def run(self) -> None:
         print("start thread")
-        # socket = QUdpSocket()
-        # result = socket.bind(QHostAddress("127.0.0.1"), 5555)
+
         if not self.s:
-            self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+            self.s = socket(AF_INET, SOCK_DGRAM)
             self.s.bind(('127.0.0.1', 5555))
 
         while self.receive:

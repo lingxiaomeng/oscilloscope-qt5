@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent, QFontMetrics
+from PyQt5.QtNetwork import QUdpSocket, QHostAddress, QTcpSocket
 from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableView, QTableWidget, QTableWidgetItem, QHeaderView, QFrame, \
     QLineEdit, QMessageBox, QTabWidget, QWidget, QLabel
 
@@ -98,7 +99,17 @@ class MainUi(QtWidgets.QMainWindow):
         self.stylesheet = file.read()
         self.setStyleSheet(self.stylesheet)
         self.setMouseTracking(True)
+
+        self.udpSocket = QTcpSocket(self)
+        self.udpSocket.bind(QHostAddress.LocalHost, 7755)
+        # self.udpSocket.readyRead.connect(self.readPendingDatagrams)
         # self.grabKeyboard()
+
+    def readPendingDatagrams(self):
+        print('ready read')
+        while self.udpSocket.hasPendingDatagrams():
+            datagram = self.udpSocket.receiveDatagram()
+            print(datagram.data())
 
     def initControlTab(self):
 
@@ -150,6 +161,7 @@ class MainUi(QtWidgets.QMainWindow):
         reset_action = QAction("Reset", self)
         setting_action = QAction("Settings", self)
         remove_line_action = QAction("Remove", self)
+        tcp_connect_action = QAction("connect", self)
 
         save_action.triggered.connect(self.save_data)
         load_action.triggered.connect(self.load_data)
@@ -158,6 +170,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.stop_action.triggered.connect(self.stop_slot)
         setting_action.triggered.connect(self.configuration_setting)
         remove_line_action.triggered.connect(self.remove_marker_lines)
+        tcp_connect_action.triggered.connect(self.tcp_connect_clicked)
 
         setting_action.setIcon(QIcon('image/setting.png'))
         self.start_action.setIcon(QIcon('image/start.png'))
@@ -461,8 +474,9 @@ class MainUi(QtWidgets.QMainWindow):
 
     def stop_slot(self):
         if self.is_stop:
-            self.udpThread.start()
+            # self.udpThread.start()
 
+            self.udpSocket.writeDatagram(b'START', QHostAddress('127.0.0.1'), 5555)
             self.timer.start(1)
             self.start_action.setEnabled(False)
             self.stop_action.setEnabled(True)
@@ -477,7 +491,8 @@ class MainUi(QtWidgets.QMainWindow):
             # self.series_1.replace(data1)
             # self.series_2.replace(data2)
         else:
-            self.udpThread.stopImmediately()
+            # self.udpThread.stopImmediately()
+            self.udpSocket.writeDatagram(b'STOP', QHostAddress('127.0.0.1'), 5555)
 
             self.start_action.setEnabled(True)
             self.stop_action.setEnabled(False)
@@ -516,6 +531,9 @@ class MainUi(QtWidgets.QMainWindow):
             self.configurations.time_max += 1
             self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
             self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+
+    def tcp_connect_clicked():
+        pass
 
 
 def main():
