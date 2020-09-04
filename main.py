@@ -8,7 +8,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent, QFontMetrics
-from PyQt5.QtNetwork import QUdpSocket, QHostAddress, QTcpSocket
+from PyQt5.QtNetwork import QUdpSocket, QHostAddress, QTcpSocket, QAbstractSocket
 from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableView, QTableWidget, QTableWidgetItem, QHeaderView, QFrame, \
     QLineEdit, QMessageBox, QTabWidget, QWidget, QLabel
 
@@ -100,16 +100,20 @@ class MainUi(QtWidgets.QMainWindow):
         self.setStyleSheet(self.stylesheet)
         self.setMouseTracking(True)
 
-        self.udpSocket = QTcpSocket(self)
-        self.udpSocket.bind(QHostAddress.LocalHost, 7755)
+        self.tcpSocket = QTcpSocket(self)
+        # self.tcpSocket.bind('192.168.137.1', 7755)
+        self.tcpSocket.readyRead.connect(self.ReadData)
+        self.tcpSocket.error.connect(self.ReadError)
         # self.udpSocket.readyRead.connect(self.readPendingDatagrams)
         # self.grabKeyboard()
 
-    def readPendingDatagrams(self):
-        print('ready read')
-        while self.udpSocket.hasPendingDatagrams():
-            datagram = self.udpSocket.receiveDatagram()
-            print(datagram.data())
+    def ReadData(self):
+        print(self.tcpSocket.readAll())
+
+    def ReadError(self, error: QAbstractSocket.SocketError):
+        print('error')
+        print(self.tcpSocket.errorString())
+        pass
 
     def initControlTab(self):
 
@@ -192,6 +196,7 @@ class MainUi(QtWidgets.QMainWindow):
         toolbar.addAction(setting_action)
         toolbar.addAction(remove_line_action)
         toolbar.addAction(reset_action)
+        toolbar.addAction(tcp_connect_action)
         toolbar.setMovable(False)
         toolbar.setObjectName('toolbar')
         self.addToolBar(toolbar)
@@ -476,7 +481,10 @@ class MainUi(QtWidgets.QMainWindow):
         if self.is_stop:
             # self.udpThread.start()
 
-            self.udpSocket.writeDatagram(b'START', QHostAddress('127.0.0.1'), 5555)
+            if self.tcpSocket.state() == QTcpSocket.ConnectedState:
+                print('send start')
+                self.tcpSocket.write(b'START')
+
             self.timer.start(1)
             self.start_action.setEnabled(False)
             self.stop_action.setEnabled(True)
@@ -492,8 +500,9 @@ class MainUi(QtWidgets.QMainWindow):
             # self.series_2.replace(data2)
         else:
             # self.udpThread.stopImmediately()
-            self.udpSocket.writeDatagram(b'STOP', QHostAddress('127.0.0.1'), 5555)
-
+            if self.tcpSocket.state() == QTcpSocket.ConnectedState:
+                print('send stop')
+                self.tcpSocket.write(b'STOP')
             self.start_action.setEnabled(True)
             self.stop_action.setEnabled(False)
             self.timer.stop()
@@ -532,7 +541,12 @@ class MainUi(QtWidgets.QMainWindow):
             self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
             self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
 
-    def tcp_connect_clicked():
+    def tcp_connect_clicked(self):
+        self.tcpSocket.connectToHost(QHostAddress('192.168.137.150'), 5550)
+        if self.tcpSocket.waitForConnected(1000):
+            print('connected')
+        else:
+            print('Not connected')
         pass
 
 

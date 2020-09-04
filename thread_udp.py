@@ -33,12 +33,10 @@ class UdpThread(QThread):
         except Exception:
             print('exception')
 
-
     def run(self) -> None:
         print("start thread")
 
         if not self.s:
-
             self.s = socket(AF_INET, SOCK_DGRAM)
             self.s.bind(('127.0.0.1', 5555))
 
