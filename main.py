@@ -2,6 +2,7 @@
 import gc
 import os
 import random
+import struct
 import sys
 
 from PyQt5 import QtWidgets
@@ -108,7 +109,14 @@ class MainUi(QtWidgets.QMainWindow):
         # self.grabKeyboard()
 
     def ReadData(self):
-        print(self.tcpSocket.readAll())
+        recv_data = self.tcpSocket.read(4)
+        res = struct.unpack('HH', recv_data)
+        abs = res[0]
+        phase = res[1]
+        abs = struct.unpack('h', struct.pack('H', abs))
+        phase = struct.unpack('h', struct.pack('H', phase))
+        print(abs[0] / 4096)
+        print(phase[0] / 2048)
 
     def ReadError(self, error: QAbstractSocket.SocketError):
         print('error')
@@ -542,7 +550,7 @@ class MainUi(QtWidgets.QMainWindow):
             self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
 
     def tcp_connect_clicked(self):
-        self.tcpSocket.connectToHost(QHostAddress('192.168.137.150'), 5550)
+        self.tcpSocket.connectToHost(QHostAddress('192.168.137.142'), 5550)
         if self.tcpSocket.waitForConnected(1000):
             print('connected')
         else:

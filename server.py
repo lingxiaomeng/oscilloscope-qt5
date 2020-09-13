@@ -1,44 +1,94 @@
-from socket import *
+# import spidev
+import socket
+import struct
 
-HOST = ''
-PORT = 5555
-BUFSIZ = 1024
-ADDRESS = (HOST, PORT)
+import select
+import queue
+import threading
+import time
 
-# 创建监听socket
-tcpServerSocket = socket(AF_INET, SOCK_STREAM)
+queue_send = queue.Queue()
 
-# 绑定IP地址和固定端口
-tcpServerSocket.bind(ADDRESS)
-print("服务器启动，监听端口{}...".format(ADDRESS[1]))
 
-tcpServerSocket.listen(5)
+class SpiRead(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.is_sending = False
+        self.is_stop = False
 
-try:
-    while True:
-        print('服务器正在运行，等待客户端连接...')
+    def run(self) -> None:
+        while not self.is_stop:
+            if self.is_sending:
+                # print('put')
 
-        # client_socket是专为这个客户端服务的socket，client_address是包含客户端IP和端口的元组
-        client_socket, client_address = tcpServerSocket.accept()
-        print('客户端{}已连接！'.format(client_address))
+                d1 = [0, 0, 1]
+                d2 = [0, 0, 17]
+                d3 = [0, 0, 234]
+                d4 = [0, 0, 214]
+                abs = (d1[2] << 8) + d2[2]
+                phase = (d3[2] << 8) + d4[2]
+                res = struct.pack('HH', abs, phase)
 
+                queue_send.put_nowait(res)
+                time.sleep(0.1)
+
+
+# from socket import *
+
+# spi = spidev.SpiDev()
+# bus = 1
+# device = 0
+# spi.open(bus,device)
+# spi.max_speed_hz = 5000000
+# spi.mode = 0x0
+# spi.bits_per_word = 8
+
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(('127.0.0.1', 5550))
+server.setblocking(False)
+server.listen(5)
+
+spi_read = SpiRead()
+spi_read.start()
+
+inputs = [server]
+outputs = []
+while True:
+    r_list, w_list, e_list = select.select(inputs, outputs, inputs)
+    for s in r_list:
+        if s == server:
+            print("新的客户端连接")
+            new_sock, addr = s.accept()
+            inputs.append(new_sock)
+        else:
+            data = s.recv(1024)
+            if data:
+                print("接收到客户端信息")
+                print(data)
+
+                if data == b'START':
+                    spi_read.is_sending = True
+                elif data == b'STOP':
+                    spi_read.is_sending = False
+
+                if s not in outputs:
+                    outputs.append(s)
+            else:
+                print("客户端断开连接")
+                inputs.remove(s)
+                if s in outputs:
+                    outputs.remove(s)
+                s.close()
+
+    for s in w_list:
+        # print(s)
         try:
-            while True:
-                # 接收客户端发来的数据，阻塞，直到有数据到来
-                # 事实上，除非当前客户端关闭后，才会跳转到外层的while循环，即一次只能服务一个客户
-                # 如果客户端关闭了连接，data是空字符串
-                data = client_socket.recv(2048)
-                if data:
-                    print('接收到消息 {}({} bytes) 来自 {}'.format(data.decode('utf-8'), len(data), client_address))
-                    # 返回响应数据，将客户端发送来的数据原样返回
-                    client_socket.send(data)
-                    print('发送消息 {} 至 {}'.format(data.decode('utf-8'), client_address))
-                else:
-                    print('客户端 {} 已断开！'.format(client_address))
-                    break
-        finally:
-            # 关闭为这个客户端服务的socket
-            client_socket.close()
-finally:
-    # 关闭监听socket，不再响应其它客户端连接
-    tcpServerSocket.close()
+            next_msg = queue_send.get_nowait()  # 非阻塞获取
+            # print(next_msg)
+        except queue.Empty:
+            err_msg = "Output Queue is Empty!"
+            # print(err_msg)
+            # g_logFd.writeFormatMsg(g_logFd.LEVEL_INFO, err_msg)
+        else:
+            s.send(next_msg)
