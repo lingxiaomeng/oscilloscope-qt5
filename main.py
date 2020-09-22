@@ -1,6 +1,6 @@
 # coding:utf-8
-import gc
 import os
+import queue
 import random
 import struct
 import sys
@@ -10,7 +10,7 @@ from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent, QFontMetrics
 from PyQt5.QtNetwork import QUdpSocket, QHostAddress, QTcpSocket, QAbstractSocket
-from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableView, QTableWidget, QTableWidgetItem, QHeaderView, QFrame, \
+from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableWidget, QHeaderView, QFrame, \
     QLineEdit, QMessageBox, QTabWidget, QWidget, QLabel
 
 from PolarChartView import PolarChartView
@@ -25,6 +25,8 @@ class MainUi(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.server_ip = '127.0.0.1'
+
         self.stop_action = QAction("Stop", self)
         self.start_action = QAction("Start", self)
         self.setObjectName('main')
@@ -42,6 +44,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_widget = QtWidgets.QWidget()  # 创建窗口主部件
         self.main_layout = QtWidgets.QGridLayout()  # 创建主部件的网格布局
         self.control_layout = QGridLayout()
+
         self.main_widget.setLayout(self.main_layout)  # 设置窗口主部件布局为网格布局
         self.setCentralWidget(self.main_widget)  # 设置窗口主部件
         self.main_layout.setSpacing(10)  # 去除缝隙
@@ -105,18 +108,43 @@ class MainUi(QtWidgets.QMainWindow):
         # self.tcpSocket.bind('192.168.137.1', 7755)
         self.tcpSocket.readyRead.connect(self.ReadData)
         self.tcpSocket.error.connect(self.ReadError)
+
+        # self.data_to_show = queue.Queue()
+
         # self.udpSocket.readyRead.connect(self.readPendingDatagrams)
         # self.grabKeyboard()
 
     def ReadData(self):
-        recv_data = self.tcpSocket.read(4)
-        res = struct.unpack('HH', recv_data)
-        abs = res[0]
-        phase = res[1]
-        abs = struct.unpack('h', struct.pack('H', abs))
-        phase = struct.unpack('h', struct.pack('H', phase))
-        print(abs[0] / 4096)
-        print(phase[0] / 2048)
+        recv_data = self.tcpSocket.readAll()
+        data_len = len(recv_data)
+        data_length = len(self.series_1)
+        # print(f"read data {data_len}")
+
+        for i in range(data_len // 4):
+            res = struct.unpack('HH', recv_data[i * 4:i * 4 + 4])
+            data_abs = res[0]
+            data_phase = res[1]
+            data_abs = struct.unpack('h', struct.pack('H', data_abs))
+            data_phase = struct.unpack('h', struct.pack('H', data_phase))
+            # self.data_to_show.put((data_abs, data_phase))
+
+            point_1 = QPointF(self.count, data_abs[0])
+            point_2 = QPointF(self.count, data_phase[0])
+            self.series_1.append(point_1)
+            self.series_2.append(point_2)
+            self.original_data_1.append(point_1)
+            self.original_data_2.append(point_2)
+            self.count += 1
+
+        if data_length > self.configurations.time_max_range and not self.is_stop:
+            self.configurations.time_min += data_len // 4
+            self.configurations.time_max += data_len // 4
+            self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+            self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        # if mag:
+        #     self.constellation_chart_view.updateArrow(mag, phase)
+        self.chart_view1.update()
+        self.chart_view2.update()
 
     def ReadError(self, error: QAbstractSocket.SocketError):
         print('error')
@@ -254,7 +282,6 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart2.axisY().setTitleText("Phase")
         self.chart2.axisX().setGridLineVisible(False)
         self.chart2.axisY().setGridLineVisible(False)
-
         self.chart_view1.setRenderHint(QPainter.Antialiasing)
         self.chart_view2.setRenderHint(QPainter.Antialiasing)
 
@@ -333,9 +360,11 @@ class MainUi(QtWidgets.QMainWindow):
         return w if w > old_w else old_w
 
     def configuration_reset(self):
-        self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_min + self.configurations.time_max_range)
+        self.chart1.axisX().setRange(self.configurations.time_min,
+                                     self.configurations.time_min + self.configurations.time_max_range)
         self.chart1.axisY().setRange(self.configurations.mag_min, self.configurations.mag_max)
-        self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_min + self.configurations.time_max_range)
+        self.chart2.axisX().setRange(self.configurations.time_min,
+                                     self.configurations.time_min + self.configurations.time_max_range)
         self.chart2.axisY().setRange(self.configurations.phase_min, self.configurations.phase_max)
 
         data1 = list()
@@ -446,12 +475,9 @@ class MainUi(QtWidgets.QMainWindow):
         self.remove_marker_lines()
 
     def timer_slot(self):
-        mag = random.random() * 3 + 5
-        phase = random.random() * 360
 
         if not self.is_stop:
-            self.constellation_chart_view.updateArrow(mag, phase)
-            self.update_data(mag, phase)
+            # self.update_data()
             self.chart_view1.update()
             self.chart_view2.update()
             # self.updateGeometry()
@@ -493,7 +519,7 @@ class MainUi(QtWidgets.QMainWindow):
                 print('send start')
                 self.tcpSocket.write(b'START')
 
-            self.timer.start(1)
+            # self.timer.start(1)
             self.start_action.setEnabled(False)
             self.stop_action.setEnabled(True)
             # self.start_action.setText('Stop')
@@ -513,44 +539,31 @@ class MainUi(QtWidgets.QMainWindow):
                 self.tcpSocket.write(b'STOP')
             self.start_action.setEnabled(True)
             self.stop_action.setEnabled(False)
-            self.timer.stop()
+            # self.timer.stop()
             self.start_btn.setIcon(QIcon("image/start.png"))
             self.start_btn.setText('Start')
             # self.start_action.setText('Start')
             self.is_stop = True
 
-    def update_data(self, mag, phase):
+    def update_data(self):
         # old_data_1 = self.series_1.pointsVector()
         # old_data_2 = self.series_2.pointsVector()
         # data3 = list()
         # data3.append(QPoint(phase, mag))
         # data3.append(QPoint(0, 0))
-        data_length = len(self.series_1)
 
         # if not self.is_stop and data_length > 200:
         #     old_data_1 = old_data_1[-200:-1]
         #     old_data_2 = old_data_2[-200:-1]
+        queue_data_length = 0
 
-        for i in range(1):
-            point_1 = QPointF(self.count, mag)
-            point_2 = QPointF(self.count, phase)
-            self.series_1.append(point_1)
-            self.series_2.append(point_2)
-            self.original_data_1.append(point_1)
-            self.original_data_2.append(point_2)
         # if not self.is_stop:
         #     self.series_1.pointsVector()
         #     self.series_1.replace(data_1)
         #     self.series_2.replace(data_2)
-        self.count += 1
-        if data_length > self.configurations.time_max_range and not self.is_stop:
-            self.configurations.time_min += 1
-            self.configurations.time_max += 1
-            self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
-            self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
 
     def tcp_connect_clicked(self):
-        self.tcpSocket.connectToHost(QHostAddress('192.168.137.142'), 5550)
+        self.tcpSocket.connectToHost(QHostAddress(self.server_ip), 5550)
         if self.tcpSocket.waitForConnected(1000):
             print('connected')
         else:

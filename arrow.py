@@ -3,6 +3,7 @@ from PyQt5.QtGui import QPen, QBrush, QColor
 from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsItem
 from PyQt5 import QtCore
 
+
 class QArrow(QGraphicsItem):
     def __init__(self, parent):
         super(QArrow, self).__init__()

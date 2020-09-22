@@ -30,7 +30,7 @@ class SpiRead(threading.Thread):
                 res = struct.pack('HH', abs, phase)
 
                 queue_send.put_nowait(res)
-                time.sleep(0.1)
+                time.sleep(0.01)
 
 
 # from socket import *
