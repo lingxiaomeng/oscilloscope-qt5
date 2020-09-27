@@ -1,6 +1,6 @@
 # coding:utf-8
 
-from PyQt5.QtChart import QChartView, QAbstractSeries, QChart
+from PyQt5.QtChart import QChartView, QAbstractSeries, QChart, QValueAxis
 from PyQt5.QtCore import QPointF, QRectF, QSizeF, QEvent, Qt, QPoint
 from PyQt5.QtGui import QMouseEvent, QWheelEvent, QResizeEvent, QPen, QColor, QPainter, QKeyEvent
 from PyQt5.QtWidgets import QHBoxLayout
@@ -114,6 +114,11 @@ class ChartView(QChartView):
             self.chart().zoom(0.8)
         else:
             self.chart().zoom(1.1)
+        time_min = self.chart().axisX().min()
+        time_max = self.chart().axisX().max()
+        self.chartview.chart().axisX().setRange(time_min, time_max)
+        self.chartview.update()
+        self.update()
         super().wheelEvent(event)
 
     def keep_callout(self):
@@ -156,7 +161,7 @@ class ChartView(QChartView):
             self.update()
         super().resizeEvent(event)
 
-    def addSeries(self, abstractSeries: QAbstractSeries):
+    def addSeries(self, abstractSeries):
         self.chart().addSeries(abstractSeries)
         # abstractSeries.clicked.connect(self.keep_callout)
         abstractSeries.hovered.connect(self.tooltip)

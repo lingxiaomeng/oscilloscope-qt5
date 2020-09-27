@@ -40,7 +40,7 @@ class PolarChartView(QChartView):
             self.updateGeometry()
         super().resizeEvent(event)
 
-    def addSeries(self, abstractSeries: QAbstractSeries):
+    def addSeries(self, abstractSeries):
         self.chart().addSeries(abstractSeries)
         # abstractSeries.clicked.connect(self.keep_callout)
         abstractSeries.setUseOpenGL(True)

@@ -1,7 +1,5 @@
 # coding:utf-8
 import os
-import queue
-import random
 import struct
 import sys
 
@@ -9,7 +7,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent, QFontMetrics
-from PyQt5.QtNetwork import QUdpSocket, QHostAddress, QTcpSocket, QAbstractSocket
+from PyQt5.QtNetwork import QHostAddress, QTcpSocket, QAbstractSocket
 from PyQt5.QtWidgets import QPushButton, QAction, QFileDialog, QGridLayout, QToolBar, QTableWidget, QHeaderView, QFrame, \
     QLineEdit, QMessageBox, QTabWidget, QWidget, QLabel
 
@@ -18,7 +16,7 @@ from QTableWidgetNumItem import QTableWidgetNumItem
 from chartview import ChartView
 from configurations import Configurations
 from settingwindow import SettingWindow
-from thread_udp import UdpThread
+from utility import ip_auto_detect
 
 
 class MainUi(QtWidgets.QMainWindow):
@@ -26,6 +24,10 @@ class MainUi(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.server_ip = '127.0.0.1'
+        self.chart1_y_min = 4096
+        self.chart1_y_max = -4096
+        self.chart2_y_min = 4096
+        self.chart2_y_max = -4096
 
         self.stop_action = QAction("Stop", self)
         self.start_action = QAction("Start", self)
@@ -36,7 +38,6 @@ class MainUi(QtWidgets.QMainWindow):
         self.original_data_1 = list()
         self.original_data_2 = list()
         self.original_data_3 = list()
-        self.udpThread = UdpThread(self.original_data_1, self.original_data_2, self.original_data_3)
 
         self.is_stop = True
         # self.setMinimumSize(1000, 740)
@@ -114,27 +115,44 @@ class MainUi(QtWidgets.QMainWindow):
         # self.udpSocket.readyRead.connect(self.readPendingDatagrams)
         # self.grabKeyboard()
 
+    def update_range(self, data1, data2):
+        if data1 < self.chart1_y_min:
+            self.chart1_y_min = data1
+        if data1 > self.chart1_y_max:
+            self.chart1_y_max = data1
+        if data2 < self.chart2_y_min:
+            self.chart2_y_min = data2
+        if data2 > self.chart2_y_max:
+            self.chart2_y_max = data2
+
     def ReadData(self):
         recv_data = self.tcpSocket.readAll()
+        print(recv_data)
         data_len = len(recv_data)
         data_length = len(self.series_1)
         # print(f"read data {data_len}")
-
+        points_1 = []
+        points_2 = []
         for i in range(data_len // 4):
             res = struct.unpack('HH', recv_data[i * 4:i * 4 + 4])
             data_abs = res[0]
             data_phase = res[1]
             data_abs = struct.unpack('h', struct.pack('H', data_abs))
             data_phase = struct.unpack('h', struct.pack('H', data_phase))
+            self.update_range(data_abs[0], data_phase[0])
             # self.data_to_show.put((data_abs, data_phase))
-
             point_1 = QPointF(self.count, data_abs[0])
             point_2 = QPointF(self.count, data_phase[0])
-            self.series_1.append(point_1)
-            self.series_2.append(point_2)
+            points_1.append(point_1)
+            points_2.append(point_2)
+            # self.series_1.append(point_1)
+            # self.series_2.append(point_2)
             self.original_data_1.append(point_1)
             self.original_data_2.append(point_2)
             self.count += 1
+        print(1)
+        self.series_1.append(points_1)
+        self.series_2.append(points_2)
 
         if data_length > self.configurations.time_max_range and not self.is_stop:
             self.configurations.time_min += data_len // 4
@@ -143,8 +161,8 @@ class MainUi(QtWidgets.QMainWindow):
             self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
         # if mag:
         #     self.constellation_chart_view.updateArrow(mag, phase)
-        self.chart_view1.update()
-        self.chart_view2.update()
+        # self.chart_view1.update()
+        # self.chart_view2.update()
 
     def ReadError(self, error: QAbstractSocket.SocketError):
         print('error')
@@ -201,7 +219,8 @@ class MainUi(QtWidgets.QMainWindow):
         reset_action = QAction("Reset", self)
         setting_action = QAction("Settings", self)
         remove_line_action = QAction("Remove", self)
-        tcp_connect_action = QAction("connect", self)
+        tcp_connect_action = QAction("Connect", self)
+        zoom_fit_action = QAction("Zoom Fit", self)
 
         save_action.triggered.connect(self.save_data)
         load_action.triggered.connect(self.load_data)
@@ -211,12 +230,15 @@ class MainUi(QtWidgets.QMainWindow):
         setting_action.triggered.connect(self.configuration_setting)
         remove_line_action.triggered.connect(self.remove_marker_lines)
         tcp_connect_action.triggered.connect(self.tcp_connect_clicked)
+        zoom_fit_action.triggered.connect(self.zoom_fit_action)
 
         setting_action.setIcon(QIcon('image/setting.png'))
         self.start_action.setIcon(QIcon('image/start.png'))
         self.stop_action.setIcon(QIcon('image/stop.png'))
         remove_line_action.setIcon(QIcon('image/return.png'))
         reset_action.setIcon(QIcon('image/refresh.png'))
+        tcp_connect_action.setIcon((QIcon('image/connect.png')))
+        zoom_fit_action.setIcon(QIcon('image/autoscale.png'))
 
         file_menu.addAction(save_action)
         file_menu.addAction(load_action)
@@ -224,6 +246,8 @@ class MainUi(QtWidgets.QMainWindow):
         action_menu.addAction(self.start_action)
         action_menu.addAction(self.stop_action)
         action_menu.addAction(reset_action)
+        action_menu.addAction(tcp_connect_action)
+        action_menu.addAction(zoom_fit_action)
 
         toolbar = QToolBar()
         toolbar.setMaximumHeight(30)
@@ -232,6 +256,7 @@ class MainUi(QtWidgets.QMainWindow):
         toolbar.addAction(setting_action)
         toolbar.addAction(remove_line_action)
         toolbar.addAction(reset_action)
+        toolbar.addAction(zoom_fit_action)
         toolbar.addAction(tcp_connect_action)
         toolbar.setMovable(False)
         toolbar.setObjectName('toolbar')
@@ -336,6 +361,28 @@ class MainUi(QtWidgets.QMainWindow):
         radial_axis.setGridLinePen(Qt.white)
         radial_axis.setLabelsBrush(Qt.white)
         self.constellation_chart_view.setRenderHint(QPainter.Antialiasing)
+
+    def zoom_fit_action(self):
+        if len(self.series_1.pointsVector()) > 0:
+            chart1_x_min = self.series_1.pointsVector()[0].x()
+            chart1_x_max = self.series_1.pointsVector()[-1].x()
+            chart1_y_max = self.chart1_y_max
+            chart1_y_min = self.chart1_y_min
+
+            chart2_x_min = self.series_2.pointsVector()[0].x()
+            chart2_x_max = self.series_2.pointsVector()[-1].x()
+            chart2_y_max = self.chart2_y_max
+            chart2_y_min = self.chart2_y_min
+
+            self.chart1.axisX().setRange(chart1_x_min - 20, chart1_x_max + 20)
+            self.chart1.axisY().setRange(chart1_y_min - 20, chart1_y_max + 20)
+            self.chart2.axisX().setRange(chart2_x_min - 20, chart2_x_max + 20)
+            self.chart2.axisY().setRange(chart2_y_min - 20, chart2_y_max + 20)
+            print(f'{chart1_x_min} {chart1_x_max} {chart1_y_min} {chart1_y_max}')
+            print(f'{chart2_x_min} {chart2_x_max} {chart2_y_min} {chart2_y_max}')
+
+            self.chart_view1.update()
+            self.chart_view2.update()
 
     def table_add_row(self, x, mag, phase):
         row = self.table.rowCount()
@@ -563,6 +610,8 @@ class MainUi(QtWidgets.QMainWindow):
         #     self.series_2.replace(data_2)
 
     def tcp_connect_clicked(self):
+        self.server_ip = ip_auto_detect()
+        print(self.server_ip)
         self.tcpSocket.connectToHost(QHostAddress(self.server_ip), 5550)
         if self.tcpSocket.waitForConnected(1000):
             print('connected')
