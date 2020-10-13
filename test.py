@@ -9,6 +9,8 @@ abs = (d1[2] << 8) + d2[2]
 phase = (d3[2] << 8) + d4[2]
 res = struct.pack('HH', abs, phase)
 
+
+
 res = struct.unpack('HH', res)
 abs = res[0]
 phase = res[1]

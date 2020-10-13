@@ -29,6 +29,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.chart2_y_min = 4096
         self.chart2_y_max = -4096
 
+        self.zoom_fit_arg = 0.1
+
         self.stop_action = QAction("Stop", self)
         self.start_action = QAction("Start", self)
         self.setObjectName('main')
@@ -139,10 +141,14 @@ class MainUi(QtWidgets.QMainWindow):
             data_phase = res[1]
             data_abs = struct.unpack('h', struct.pack('H', data_abs))
             data_phase = struct.unpack('h', struct.pack('H', data_phase))
-            self.update_range(data_abs[0], data_phase[0])
+
+            data_abs = data_abs[0] / 4096
+            data_phase = data_phase[0] / 2048
+
+            self.update_range(data_abs, data_phase)
             # self.data_to_show.put((data_abs, data_phase))
-            point_1 = QPointF(self.count, data_abs[0])
-            point_2 = QPointF(self.count, data_phase[0])
+            point_1 = QPointF(self.count, data_abs)
+            point_2 = QPointF(self.count, data_phase)
             points_1.append(point_1)
             points_2.append(point_2)
             # self.series_1.append(point_1)
@@ -374,10 +380,10 @@ class MainUi(QtWidgets.QMainWindow):
             chart2_y_max = self.chart2_y_max
             chart2_y_min = self.chart2_y_min
 
-            self.chart1.axisX().setRange(chart1_x_min - 20, chart1_x_max + 20)
-            self.chart1.axisY().setRange(chart1_y_min - 20, chart1_y_max + 20)
-            self.chart2.axisX().setRange(chart2_x_min - 20, chart2_x_max + 20)
-            self.chart2.axisY().setRange(chart2_y_min - 20, chart2_y_max + 20)
+            self.chart1.axisX().setRange(chart1_x_min - self.zoom_fit_arg, chart1_x_max + self.zoom_fit_arg)
+            self.chart1.axisY().setRange(chart1_y_min - self.zoom_fit_arg, chart1_y_max + self.zoom_fit_arg)
+            self.chart2.axisX().setRange(chart2_x_min - self.zoom_fit_arg, chart2_x_max + self.zoom_fit_arg)
+            self.chart2.axisY().setRange(chart2_y_min - self.zoom_fit_arg, chart2_y_max + self.zoom_fit_arg)
             print(f'{chart1_x_min} {chart1_x_max} {chart1_y_min} {chart1_y_max}')
             print(f'{chart2_x_min} {chart2_x_max} {chart2_y_min} {chart2_y_max}')
 
