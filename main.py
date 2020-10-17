@@ -2,8 +2,9 @@
 import os
 import struct
 import sys
+import time
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtChart import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QPainter, QIcon, QPen, QColor, QBrush, QKeyEvent, QFontMetrics
@@ -23,6 +24,9 @@ class MainUi(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        self.start_time = 0
+
         self.server_ip = '127.0.0.1'
         self.chart1_y_min = 4096
         self.chart1_y_max = -4096
@@ -84,9 +88,6 @@ class MainUi(QtWidgets.QMainWindow):
         self.browse_btn = QPushButton('Browse')
         self.save_btn = QPushButton('Save')
         self.load_btn = QPushButton('Load')
-        self.spi_id1 = QLineEdit()
-        self.spi_id2 = QLineEdit()
-        self.spi_ok = QPushButton("Send")
 
         self.browse_btn.clicked.connect(self.choose_path)
         self.save_btn.clicked.connect(self.save_action)
@@ -128,22 +129,22 @@ class MainUi(QtWidgets.QMainWindow):
             self.chart2_y_max = data2
 
     def ReadData(self):
+        print(time.time() - self.start_time)
+        self.start_time = time.time()
         recv_data = self.tcpSocket.readAll()
-        print(recv_data)
+        # print(recv_data)
         data_len = len(recv_data)
         data_length = len(self.series_1)
         # print(f"read data {data_len}")
         points_1 = []
         points_2 = []
         for i in range(data_len // 4):
-            res = struct.unpack('HH', recv_data[i * 4:i * 4 + 4])
+            res = struct.unpack('!hh', recv_data[i * 4:i * 4 + 4])
             data_abs = res[0]
             data_phase = res[1]
-            data_abs = struct.unpack('h', struct.pack('H', data_abs))
-            data_phase = struct.unpack('h', struct.pack('H', data_phase))
 
-            data_abs = data_abs[0] / 4096
-            data_phase = data_phase[0] / 2048
+            data_abs = data_abs / 4096
+            data_phase = data_phase / 2048
 
             self.update_range(data_abs, data_phase)
             # self.data_to_show.put((data_abs, data_phase))
@@ -156,7 +157,7 @@ class MainUi(QtWidgets.QMainWindow):
             self.original_data_1.append(point_1)
             self.original_data_2.append(point_2)
             self.count += 1
-        print(1)
+        # print(1)
         self.series_1.append(points_1)
         self.series_2.append(points_2)
 
@@ -169,6 +170,7 @@ class MainUi(QtWidgets.QMainWindow):
         #     self.constellation_chart_view.updateArrow(mag, phase)
         # self.chart_view1.update()
         # self.chart_view2.update()
+        print(time.time() - self.start_time)
 
     def ReadError(self, error: QAbstractSocket.SocketError):
         print('error')
@@ -179,10 +181,8 @@ class MainUi(QtWidgets.QMainWindow):
 
         control_widget = QWidget()
         control_widget.setObjectName("c1")
-        spi_control_widget = QWidget()
-        spi_control_widget.setObjectName("c2")
+
         self.controlTab.addTab(control_widget, 'Main')
-        self.controlTab.addTab(spi_control_widget, 'SPI')
         self.controlTab.setObjectName("c0")
 
         control_widget.setLayout(self.control_layout)
@@ -206,14 +206,73 @@ class MainUi(QtWidgets.QMainWindow):
         self.control_layout.addWidget(self.table, 1, 0, 14, 1, Qt.AlignTop)
         self.control_layout.setContentsMargins(0, 5, 0, 0)
 
+        self.initSpiTab()
+
+    # TODO spi tab
+    def initSpiTab(self):
+        spi_control_widget = QWidget()
+        spi_control_widget.setObjectName("c2")
+        self.controlTab.addTab(spi_control_widget, 'SPI')
         spi_layout = QGridLayout()
         spi_control_widget.setLayout(spi_layout)
         spi_control_widget.setContentsMargins(0, 5, 0, 0)
-        spi_layout.addWidget(QLabel("ID 1"), 0, 0, Qt.AlignCenter)
-        spi_layout.addWidget(QLabel("ID 2"), 1, 0, Qt.AlignCenter)
-        spi_layout.addWidget(self.spi_id1, 0, 1, Qt.AlignCenter)
-        spi_layout.addWidget(self.spi_id2, 1, 1, Qt.AlignCenter)
-        spi_layout.addWidget(self.spi_ok, 1, 2, Qt.AlignCenter)
+
+        self.rst_sft = QLineEdit()
+        self.rst_carcel = QLineEdit()
+        self.baseband = QLineEdit()
+        self.reader_tx_en = QLineEdit()
+        self.cmd_type = QLineEdit()
+        self.cmd_excu = QLineEdit()
+        self.main_state = QLineEdit()
+        self.carcel_state = QLineEdit()
+        self.tx1_amp = QLineEdit()
+        self.tx2_amp = QLineEdit()
+        self.rx_mean_i = QLineEdit()
+        self.rx_mean_q = QLineEdit()
+        self.Read_Cmd = QLineEdit()
+        self.Write_Cmd = QLineEdit()
+        self.Query_Cmd = QLineEdit()
+        self.Lock_Cmd = QLineEdit()
+        self.FIFO_Count = QLineEdit()
+        self.FIFO_Data = QLineEdit()
+
+        spi_layout.addWidget(QLabel("rst_sft"), 0, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("rst_carcel"), 1, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("baseband"), 2, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("reader_tx_en"), 3, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("cmd_type"), 4, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("cmd_excu"), 5, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("main_state"), 6, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("carcel_state"), 7, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("tx1_amp"), 8, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("tx2_amp"), 0, 2, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("rx_mean_i"), 1, 2, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("rx_mean_q"), 2, 2, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("Read_Cmd"), 3, 2, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("Write_Cmd"), 4, 2, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("Query_Cmd"), 5, 2, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("Lock_Cmd"), 6, 2, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("FIFO_Count"), 7, 2, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("FIFO_Data"), 8, 2, Qt.AlignCenter)
+
+        spi_layout.addWidget(self.rst_sft, 0, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.rst_carcel, 1, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.baseband, 2, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.reader_tx_en, 3, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.cmd_type, 4, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.cmd_excu, 5, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.main_state, 6, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.carcel_state, 7, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.tx1_amp, 8, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.tx2_amp, 0, 3, Qt.AlignCenter)
+        spi_layout.addWidget(self.rx_mean_i, 1, 3, Qt.AlignCenter)
+        spi_layout.addWidget(self.rx_mean_q, 2, 3, Qt.AlignCenter)
+        spi_layout.addWidget(self.Read_Cmd, 3, 3, Qt.AlignCenter)
+        spi_layout.addWidget(self.Write_Cmd, 4, 3, Qt.AlignCenter)
+        spi_layout.addWidget(self.Query_Cmd, 5, 3, Qt.AlignCenter)
+        spi_layout.addWidget(self.Lock_Cmd, 6, 3, Qt.AlignCenter)
+        spi_layout.addWidget(self.FIFO_Count, 7, 3, Qt.AlignCenter)
+        spi_layout.addWidget(self.FIFO_Data, 8, 3, Qt.AlignCenter)
 
     def init_menu(self):
 
@@ -526,6 +585,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.count = 0
         self.constellation_chart_view.updateArrow(0, 0)
         self.remove_marker_lines()
+        self.tcpSocket.close()
 
     def timer_slot(self):
 
@@ -564,6 +624,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.table.model().removeRows(0, self.table.rowCount())
         self.table.hide()
 
+    # TODO START BUTTON
+
     def stop_slot(self):
         if self.is_stop:
             # self.udpThread.start()
@@ -571,7 +633,7 @@ class MainUi(QtWidgets.QMainWindow):
             if self.tcpSocket.state() == QTcpSocket.ConnectedState:
                 print('send start')
                 self.tcpSocket.write(b'START')
-
+                self.start_time = time.time()
             # self.timer.start(1)
             self.start_action.setEnabled(False)
             self.stop_action.setEnabled(True)
@@ -624,6 +686,10 @@ class MainUi(QtWidgets.QMainWindow):
         else:
             print('Not connected')
         pass
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.tcpSocket.close()
+        super().closeEvent(a0)
 
 
 def main():
