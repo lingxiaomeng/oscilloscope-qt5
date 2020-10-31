@@ -132,45 +132,7 @@ class MainUi(QtWidgets.QMainWindow):
         print(time.time() - self.start_time)
         self.start_time = time.time()
         recv_data = self.tcpSocket.readAll()
-        # print(recv_data)
-        data_len = len(recv_data)
-        data_length = len(self.series_1)
-        # print(f"read data {data_len}")
-        points_1 = []
-        points_2 = []
-        for i in range(data_len // 4):
-            res = struct.unpack('!hh', recv_data[i * 4:i * 4 + 4])
-            data_abs = res[0]
-            data_phase = res[1]
-
-            # data_abs = data_abs / 4096
-            # data_phase = data_phase / 2048
-
-            self.update_range(data_abs, data_phase)
-            # self.data_to_show.put((data_abs, data_phase))
-            point_1 = QPointF(self.count, data_abs)
-            point_2 = QPointF(self.count, data_phase)
-            points_1.append(point_1)
-            points_2.append(point_2)
-            # self.series_1.append(point_1)
-            # self.series_2.append(point_2)
-            self.original_data_1.append(point_1)
-            self.original_data_2.append(point_2)
-            self.count += 1
-        # print(1)
-        self.series_1.append(points_1)
-        self.series_2.append(points_2)
-
-        if data_length > self.configurations.time_max_range and not self.is_stop:
-            self.configurations.time_min += data_len // 4
-            self.configurations.time_max += data_len // 4
-            self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
-            self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
-        # if mag:
-        #     self.constellation_chart_view.updateArrow(mag, phase)
-        # self.chart_view1.update()
-        # self.chart_view2.update()
-        print(time.time() - self.start_time)
+        self.update_data(recv_data)
 
     def ReadError(self, error: QAbstractSocket.SocketError):
         print('error')
@@ -488,6 +450,11 @@ class MainUi(QtWidgets.QMainWindow):
             print(f'{chart1_x_min} {chart1_x_max} {chart1_y_min} {chart1_y_max}')
             print(f'{chart2_x_min} {chart2_x_max} {chart2_y_min} {chart2_y_max}')
 
+            self.chart1_y_min = 4096
+            self.chart1_y_max = -4096
+            self.chart2_y_min = 4096
+            self.chart2_y_max = -4096
+
             self.chart_view1.update()
             self.chart_view2.update()
 
@@ -702,22 +669,48 @@ class MainUi(QtWidgets.QMainWindow):
             # self.start_action.setText('Start')
             self.is_stop = True
 
-    def update_data(self):
-        # old_data_1 = self.series_1.pointsVector()
-        # old_data_2 = self.series_2.pointsVector()
-        # data3 = list()
-        # data3.append(QPoint(phase, mag))
-        # data3.append(QPoint(0, 0))
+    def update_data(self, recv_data):
+        # print(recv_data)
+        data_len = len(recv_data)
+        data_length = len(self.series_1)
+        # print(f"read data {data_len}")
+        points_1 = []
+        points_2 = []
+        self.count = 0
+        for i in range(data_len // 4):
+            res = struct.unpack('!hh', recv_data[i * 4:i * 4 + 4])
+            data_abs = res[0]
+            data_phase = res[1]
 
-        # if not self.is_stop and data_length > 200:
-        #     old_data_1 = old_data_1[-200:-1]
-        #     old_data_2 = old_data_2[-200:-1]
-        queue_data_length = 0
+            # data_abs = data_abs / 4096
+            # data_phase = data_phase / 2048
 
-        # if not self.is_stop:
-        #     self.series_1.pointsVector()
-        #     self.series_1.replace(data_1)
-        #     self.series_2.replace(data_2)
+            self.update_range(data_abs, data_phase)
+            # self.data_to_show.put((data_abs, data_phase))
+            point_1 = QPointF(self.count, data_abs)
+            point_2 = QPointF(self.count, data_phase)
+            points_1.append(point_1)
+            points_2.append(point_2)
+            # self.series_1.append(point_1)
+            # self.series_2.append(point_2)
+            # self.original_data_1.append(point_1)
+            # self.original_data_2.append(point_2)
+            self.count += 1
+        # print(1)
+        self.series_1.replace(points_1)
+        self.series_2.replace(points_2)
+
+        # if data_length > self.configurations.time_max_range and not self.is_stop:
+        #     self.configurations.time_min += data_len // 4
+        #     self.configurations.time_max += data_len // 4
+        #     self.chart1.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        #     self.chart2.axisX().setRange(self.configurations.time_min, self.configurations.time_max)
+        # if mag:
+        #     self.constellation_chart_view.updateArrow(mag, phase)
+        # self.chart_view1.update()
+        # self.chart_view2.update()
+        # self.zoom_fit_action()
+        print(time.time() - self.start_time)
 
     def tcp_connect_clicked(self):
         self.server_ip = ip_auto_detect()
