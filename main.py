@@ -128,7 +128,7 @@ class MainUi(QtWidgets.QMainWindow):
         if data2 > self.chart2_y_max:
             self.chart2_y_max = data2
 
-    def ReadData(self):
+    def ReadData(self):  # todo network read data
         print(time.time() - self.start_time)
         self.start_time = time.time()
         recv_data = self.tcpSocket.readAll()
@@ -143,8 +143,8 @@ class MainUi(QtWidgets.QMainWindow):
             data_abs = res[0]
             data_phase = res[1]
 
-            data_abs = data_abs / 4096
-            data_phase = data_phase / 2048
+            # data_abs = data_abs / 4096
+            # data_phase = data_phase / 2048
 
             self.update_range(data_abs, data_phase)
             # self.data_to_show.put((data_abs, data_phase))
@@ -218,7 +218,7 @@ class MainUi(QtWidgets.QMainWindow):
         spi_control_widget.setContentsMargins(0, 5, 0, 0)
 
         self.rst_sft = QLineEdit()
-        self.rst_carcel = QLineEdit()
+        self.rst_cancel = QLineEdit()
         self.baseband = QLineEdit()
         self.reader_tx_en = QLineEdit()
         self.cmd_type = QLineEdit()
@@ -237,7 +237,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.FIFO_Data = QLineEdit()
 
         spi_layout.addWidget(QLabel("rst_sft"), 0, 0, Qt.AlignCenter)
-        spi_layout.addWidget(QLabel("rst_carcel"), 1, 0, Qt.AlignCenter)
+        spi_layout.addWidget(QLabel("rst_cancel"), 1, 0, Qt.AlignCenter)
         spi_layout.addWidget(QLabel("baseband"), 2, 0, Qt.AlignCenter)
         spi_layout.addWidget(QLabel("reader_tx_en"), 3, 0, Qt.AlignCenter)
         spi_layout.addWidget(QLabel("cmd_type"), 4, 0, Qt.AlignCenter)
@@ -256,7 +256,7 @@ class MainUi(QtWidgets.QMainWindow):
         spi_layout.addWidget(QLabel("FIFO_Data"), 8, 2, Qt.AlignCenter)
 
         spi_layout.addWidget(self.rst_sft, 0, 1, Qt.AlignCenter)
-        spi_layout.addWidget(self.rst_carcel, 1, 1, Qt.AlignCenter)
+        spi_layout.addWidget(self.rst_cancel, 1, 1, Qt.AlignCenter)
         spi_layout.addWidget(self.baseband, 2, 1, Qt.AlignCenter)
         spi_layout.addWidget(self.reader_tx_en, 3, 1, Qt.AlignCenter)
         spi_layout.addWidget(self.cmd_type, 4, 1, Qt.AlignCenter)
@@ -273,6 +273,48 @@ class MainUi(QtWidgets.QMainWindow):
         spi_layout.addWidget(self.Lock_Cmd, 6, 3, Qt.AlignCenter)
         spi_layout.addWidget(self.FIFO_Count, 7, 3, Qt.AlignCenter)
         spi_layout.addWidget(self.FIFO_Data, 8, 3, Qt.AlignCenter)
+
+        self.btn_rst_sft = QPushButton('发送')
+        self.btn_rst_cancel = QPushButton('rst_cancel')
+        self.btn_base_band = QPushButton('rst_baseband')
+
+        spi_layout.addWidget(self.btn_rst_sft, 9, 0)
+
+    def spi_rst_sft(self):
+        # TODO spi rst sft
+        pass
+
+    def spi_rst_cancel(self):
+        # TODO spi
+        pass
+
+    def spi_rst_baseband(self):
+        # TODO spi
+        pass
+
+    def spi_reader_tx_en(self):
+        # TODO SPI
+        pass
+
+    def spi_cmd_type(self):
+        # todo spi
+        pass
+
+    def spi_read_cmd(self):
+        # todo spi
+        pass
+
+    def spi_write_cmd(self):
+        # todo spi
+        pass
+
+    def spi_query_cmd(self):
+        # todo spi
+        pass
+
+    def spi_lock_cmd(self):
+        # todo spi
+        pass
 
     def init_menu(self):
 
@@ -679,8 +721,9 @@ class MainUi(QtWidgets.QMainWindow):
 
     def tcp_connect_clicked(self):
         self.server_ip = ip_auto_detect()
+        self.server_ip = '192.168.137.10'
         print(self.server_ip)
-        self.tcpSocket.connectToHost(QHostAddress(self.server_ip), 5550)
+        self.tcpSocket.connectToHost(QHostAddress(self.server_ip), 5551)
         if self.tcpSocket.waitForConnected(1000):
             print('connected')
         else:
