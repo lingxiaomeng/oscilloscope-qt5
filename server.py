@@ -7,6 +7,8 @@ import queue
 import threading
 import time
 
+import random
+
 queue_send = queue.Queue()
 
 
@@ -20,17 +22,13 @@ class SpiRead(threading.Thread):
         while not self.is_stop:
             if self.is_sending:
                 # print('put')
-
-                d1 = [0, 0, 1]
-                d2 = [0, 0, 17]
-                d3 = [0, 0, 234]
-                d4 = [0, 0, 214]
-                abs = (d1[2] << 8) + d2[2]
-                phase = (d3[2] << 8) + d4[2]
-                res = struct.pack('HH', abs, phase)
-
-                queue_send.put_nowait(res)
-                time.sleep(0.01)
+                spi_data = b''
+                for i in range(2048):
+                    d1 = [0, random.randint(0, 100), random.randint(0, 100)]
+                    d2 = [0, random.randint(0, 1), random.randint(0, 120)]
+                    spi_data = spi_data + bytes([d1[1], d1[2], d2[1], d2[2]])
+                queue_send.put_nowait(spi_data)
+                time.sleep(0.3)
 
 
 # from socket import *
@@ -45,7 +43,7 @@ class SpiRead(threading.Thread):
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(('192.168.1.223', 5550))
+server.bind(('127.0.0.1', 5551))
 server.setblocking(False)
 server.listen(5)
 
@@ -62,7 +60,12 @@ while True:
             new_sock, addr = s.accept()
             inputs.append(new_sock)
         else:
-            data = s.recv(1024)
+            data = None
+            try:
+                data = s.recv(1024)
+            except ConnectionResetError as err:
+                print(err)
+
             if data:
                 print("接收到客户端信息")
                 print(data)

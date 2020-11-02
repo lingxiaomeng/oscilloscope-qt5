@@ -28,10 +28,12 @@ class MainUi(QtWidgets.QMainWindow):
         self.start_time = 0
 
         self.server_ip = '127.0.0.1'
-        self.chart1_y_min = 4096
-        self.chart1_y_max = -4096
-        self.chart2_y_min = 4096
-        self.chart2_y_max = -4096
+        self.port = 5551
+
+        self.mag_min = 4096
+        self.mag_max = -4096
+        self.phase_min = 4096
+        self.phase_max = -4096
 
         self.zoom_fit_arg = 0.1
 
@@ -119,14 +121,14 @@ class MainUi(QtWidgets.QMainWindow):
         # self.grabKeyboard()
 
     def update_range(self, data1, data2):
-        if data1 < self.chart1_y_min:
-            self.chart1_y_min = data1
-        if data1 > self.chart1_y_max:
-            self.chart1_y_max = data1
-        if data2 < self.chart2_y_min:
-            self.chart2_y_min = data2
-        if data2 > self.chart2_y_max:
-            self.chart2_y_max = data2
+        if data1 < self.mag_min:
+            self.mag_min = data1
+        if data1 > self.mag_max:
+            self.mag_max = data1
+        if data2 < self.phase_min:
+            self.phase_min = data2
+        if data2 > self.phase_max:
+            self.phase_max = data2
 
     def ReadData(self):  # todo network read data
         print(time.time() - self.start_time)
@@ -399,8 +401,8 @@ class MainUi(QtWidgets.QMainWindow):
         self.constellation_chart.setTitle(' ')
         self.main_layout.addWidget(self.constellation_chart_view, 0, 1)
 
-        radial_axis = QValueAxis()
-        radial_axis.setRange(self.configurations.mag_min, self.configurations.mag_max)
+        self.radial_axis = QValueAxis()
+        self.radial_axis.setRange(self.configurations.mag_min, self.configurations.mag_max)
 
         angular_axis = QValueAxis()
         angular_axis.setTickCount(5)
@@ -408,16 +410,16 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.constellation_chart.legend().setVisible(False)
         self.constellation_chart.addAxis(angular_axis, QPolarChart.PolarOrientationAngular)
-        self.constellation_chart.addAxis(radial_axis, QPolarChart.PolarOrientationRadial)
+        self.constellation_chart.addAxis(self.radial_axis, QPolarChart.PolarOrientationRadial)
 
         series_point = QScatterSeries()
         self.constellation_chart.addSeries(series_point)
-        series_point.attachAxis(radial_axis)
+        series_point.attachAxis(self.radial_axis)
         series_point.attachAxis(angular_axis)
 
         series = QSplineSeries()
         self.constellation_chart.addSeries(series)
-        series.attachAxis(radial_axis)
+        series.attachAxis(self.radial_axis)
         series.attachAxis(angular_axis)
 
         self.constellation_chart.setTitleBrush(Qt.white)
@@ -426,34 +428,32 @@ class MainUi(QtWidgets.QMainWindow):
         angular_axis.setLinePen(Qt.white)
         angular_axis.setGridLinePen(Qt.white)
         angular_axis.setLabelsBrush(Qt.white)
-        radial_axis.setLinePen(Qt.white)
-        radial_axis.setGridLinePen(Qt.white)
-        radial_axis.setLabelsBrush(Qt.white)
+        self.radial_axis.setLinePen(Qt.white)
+        self.radial_axis.setGridLinePen(Qt.white)
+        self.radial_axis.setLabelsBrush(Qt.white)
         self.constellation_chart_view.setRenderHint(QPainter.Antialiasing)
 
     def zoom_fit_action(self):
         if len(self.series_1.pointsVector()) > 0:
             chart1_x_min = self.series_1.pointsVector()[0].x()
             chart1_x_max = self.series_1.pointsVector()[-1].x()
-            chart1_y_max = self.chart1_y_max
-            chart1_y_min = self.chart1_y_min
+            chart1_y_max = self.mag_max
+            chart1_y_min = self.mag_min
 
             chart2_x_min = self.series_2.pointsVector()[0].x()
             chart2_x_max = self.series_2.pointsVector()[-1].x()
-            chart2_y_max = self.chart2_y_max
-            chart2_y_min = self.chart2_y_min
+            chart2_y_max = self.phase_max
+            chart2_y_min = self.phase_min
 
-            self.chart1.axisX().setRange(chart1_x_min - self.zoom_fit_arg, chart1_x_max + self.zoom_fit_arg)
-            self.chart1.axisY().setRange(chart1_y_min - self.zoom_fit_arg, chart1_y_max + self.zoom_fit_arg)
-            self.chart2.axisX().setRange(chart2_x_min - self.zoom_fit_arg, chart2_x_max + self.zoom_fit_arg)
-            self.chart2.axisY().setRange(chart2_y_min - self.zoom_fit_arg, chart2_y_max + self.zoom_fit_arg)
+            self.update_axis_range(chart1_y_min, chart1_y_max, chart2_y_min, chart2_y_max, chart1_x_min, chart1_x_max)
+
             print(f'{chart1_x_min} {chart1_x_max} {chart1_y_min} {chart1_y_max}')
             print(f'{chart2_x_min} {chart2_x_max} {chart2_y_min} {chart2_y_max}')
 
-            self.chart1_y_min = 4096
-            self.chart1_y_max = -4096
-            self.chart2_y_min = 4096
-            self.chart2_y_max = -4096
+            self.mag_min = 4096
+            self.mag_max = -4096
+            self.phase_min = 4096
+            self.phase_max = -4096
 
             self.chart_view1.update()
             self.chart_view2.update()
@@ -481,12 +481,10 @@ class MainUi(QtWidgets.QMainWindow):
         return w if w > old_w else old_w
 
     def configuration_reset(self):
-        self.chart1.axisX().setRange(self.configurations.time_min,
-                                     self.configurations.time_min + self.configurations.time_max_range)
-        self.chart1.axisY().setRange(self.configurations.mag_min, self.configurations.mag_max)
-        self.chart2.axisX().setRange(self.configurations.time_min,
-                                     self.configurations.time_min + self.configurations.time_max_range)
-        self.chart2.axisY().setRange(self.configurations.phase_min, self.configurations.phase_max)
+
+        self.update_axis_range(self.configurations.mag_min, self.configurations.mag_max, self.configurations.phase_min,
+                               self.configurations.phase_max, self.configurations.time_min,
+                               self.configurations.time_min + self.configurations.time_max_range)
 
         data1 = list()
         data2 = list()
@@ -585,7 +583,7 @@ class MainUi(QtWidgets.QMainWindow):
             f.write(str(data.y()) + ",")
         f.write("\n")
         f.close()
-        self.configurations.update(0, 100, 100, 0, 360, 0, 10)
+        # self.configurations.update(0, 100, 100, 0, 360, 0, 10)
         self.original_data_1 = list()
         self.original_data_2 = list()
         self.series_1.replace(self.original_data_1)
@@ -595,6 +593,12 @@ class MainUi(QtWidgets.QMainWindow):
         self.constellation_chart_view.updateArrow(0, 0)
         self.remove_marker_lines()
         self.tcpSocket.close()
+        self.chart_view1.m_tooltip.hide()
+        self.chart_view2.m_tooltip.hide()
+
+        self.chart_view1.update()
+        self.chart_view2.update()
+        self.constellation_chart_view.update()
 
     def timer_slot(self):
 
@@ -699,6 +703,8 @@ class MainUi(QtWidgets.QMainWindow):
         # print(1)
         self.series_1.replace(points_1)
         self.series_2.replace(points_2)
+        self.constellation_chart_view.updateArrow(
+            self.mag_max if self.mag_max < self.radial_axis.max() else self.radial_axis.max(), self.phase_max)
 
         # if data_length > self.configurations.time_max_range and not self.is_stop:
         #     self.configurations.time_min += data_len // 4
@@ -710,13 +716,13 @@ class MainUi(QtWidgets.QMainWindow):
         # self.chart_view1.update()
         # self.chart_view2.update()
         # self.zoom_fit_action()
-        print(time.time() - self.start_time)
+        # print(time.time() - self.start_time)
 
     def tcp_connect_clicked(self):
-        self.server_ip = ip_auto_detect()
-        self.server_ip = '192.168.137.10'
+        # self.server_ip = ip_auto_detect()
+        # self.server_ip = '192.168.137.10'
         print(self.server_ip)
-        self.tcpSocket.connectToHost(QHostAddress(self.server_ip), 5551)
+        self.tcpSocket.connectToHost(QHostAddress(self.server_ip), self.port)
         if self.tcpSocket.waitForConnected(1000):
             print('connected')
         else:
@@ -726,6 +732,13 @@ class MainUi(QtWidgets.QMainWindow):
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.tcpSocket.close()
         super().closeEvent(a0)
+
+    def update_axis_range(self, mag_min, mag_max, phase_min, phase_max, time_min, time_max):
+        self.chart1.axisX().setRange(time_min, time_max)
+        self.chart1.axisY().setRange(mag_min, mag_max)
+        self.chart2.axisX().setRange(time_min, time_max)
+        self.chart2.axisY().setRange(phase_min, phase_max)
+        self.radial_axis.setRange(mag_min, mag_max)
 
 
 def main():

@@ -21,6 +21,9 @@ class PolarChartView(QChartView):
         self.x = 0
         self.y = 0
 
+    # def update_range(self, mag_min, mag_max):
+    #     self.chart()
+
     def update(self) -> None:
         self.arrow.update()
         super().update()
