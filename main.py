@@ -27,13 +27,13 @@ class MainUi(QtWidgets.QMainWindow):
 
         self.start_time = 0
 
-        self.server_ip = '127.0.0.1'
+        self.server_ip = '192.168.137.10'
         self.port = 5551
 
-        self.mag_min = 4096
-        self.mag_max = -4096
-        self.phase_min = 4096
-        self.phase_max = -4096
+        self.mag_min = 4096000
+        self.mag_max = -4096000
+        self.phase_min = 4096000
+        self.phase_max = -4096000
 
         self.zoom_fit_arg = 0.1
 
@@ -131,8 +131,6 @@ class MainUi(QtWidgets.QMainWindow):
             self.phase_max = data2
 
     def ReadData(self):  # todo network read data
-        print(time.time() - self.start_time)
-        self.start_time = time.time()
         recv_data = self.tcpSocket.readAll()
         self.update_data(recv_data)
 
@@ -674,6 +672,10 @@ class MainUi(QtWidgets.QMainWindow):
             self.is_stop = True
 
     def update_data(self, recv_data):
+        self.mag_min = 4096000
+        self.mag_max = -4096000
+        self.phase_min = 4096000
+        self.phase_max = -4096000
         # print(recv_data)
         data_len = len(recv_data)
         data_length = len(self.series_1)
