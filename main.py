@@ -120,26 +120,7 @@ class MainUi(QtWidgets.QMainWindow):
         # self.udpSocket.readyRead.connect(self.readPendingDatagrams)
         # self.grabKeyboard()
 
-    def update_range(self, data1, data2):
-        if data1 < self.mag_min:
-            self.mag_min = data1
-        if data1 > self.mag_max:
-            self.mag_max = data1
-        if data2 < self.phase_min:
-            self.phase_min = data2
-        if data2 > self.phase_max:
-            self.phase_max = data2
-
-    def ReadData(self):  # todo network read data
-        recv_data = self.tcpSocket.readAll()
-        self.update_data(recv_data)
-
-    def ReadError(self, error: QAbstractSocket.SocketError):
-        print('error')
-        print(self.tcpSocket.errorString())
-        pass
-
-    def initControlTab(self):
+    def initControlTab(self):  # 初始化控制面板
 
         control_widget = QWidget()
         control_widget.setObjectName("c1")
@@ -171,7 +152,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.initSpiTab()
 
     # TODO spi tab
-    def initSpiTab(self):
+    def initSpiTab(self):  # 初始化spi面板
         spi_control_widget = QWidget()
         spi_control_widget.setObjectName("c2")
         self.controlTab.addTab(spi_control_widget, 'SPI')
@@ -242,43 +223,7 @@ class MainUi(QtWidgets.QMainWindow):
 
         spi_layout.addWidget(self.btn_rst_sft, 9, 0)
 
-    def spi_rst_sft(self):
-        # TODO spi rst sft
-        pass
-
-    def spi_rst_cancel(self):
-        # TODO spi
-        pass
-
-    def spi_rst_baseband(self):
-        # TODO spi
-        pass
-
-    def spi_reader_tx_en(self):
-        # TODO SPI
-        pass
-
-    def spi_cmd_type(self):
-        # todo spi
-        pass
-
-    def spi_read_cmd(self):
-        # todo spi
-        pass
-
-    def spi_write_cmd(self):
-        # todo spi
-        pass
-
-    def spi_query_cmd(self):
-        # todo spi
-        pass
-
-    def spi_lock_cmd(self):
-        # todo spi
-        pass
-
-    def init_menu(self):
+    def init_menu(self):  # 初始化目录
 
         file_menu = self.menuBar().addMenu('File')
         action_menu = self.menuBar().addMenu('Action')
@@ -331,7 +276,7 @@ class MainUi(QtWidgets.QMainWindow):
         toolbar.setObjectName('toolbar')
         self.addToolBar(toolbar)
 
-    def init_chart_background(self, qchart: QChart, series: QAbstractSeries):
+    def init_chart_background(self, qchart: QChart, series: QAbstractSeries):  # 初始化背景颜色
 
         # pen = QPen(QColor(0x567EBB))
         pen = QPen(QColor(0xCAFF42))
@@ -347,7 +292,7 @@ class MainUi(QtWidgets.QMainWindow):
         qchart.axisX().setTitleBrush(QBrush(QColor(0xffffff)))
         qchart.axisY().setTitleBrush(QBrush(QColor(0xffffff)))
 
-    def init_chart(self):
+    def init_chart(self):  # 初始化图表
         self.chart_view1.setObjectName("chart1")
         self.chart_view2.setObjectName("chart2")
 
@@ -392,7 +337,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.init_chart_background(self.chart1, self.series_1)
         self.init_chart_background(self.chart2, self.series_2)
 
-    def init_constellation_diagram(self):
+    def init_constellation_diagram(self):  # 初始化星座图
 
         self.constellation_chart_view.setObjectName("chart3")
         self.constellation_chart_view.setChart(self.constellation_chart)
@@ -431,7 +376,26 @@ class MainUi(QtWidgets.QMainWindow):
         self.radial_axis.setLabelsBrush(Qt.white)
         self.constellation_chart_view.setRenderHint(QPainter.Antialiasing)
 
-    def zoom_fit_action(self):
+    def update_data_range(self, data1, data2):  # 更新接受到数据的范围
+        if data1 < self.mag_min:
+            self.mag_min = data1
+        if data1 > self.mag_max:
+            self.mag_max = data1
+        if data2 < self.phase_min:
+            self.phase_min = data2
+        if data2 > self.phase_max:
+            self.phase_max = data2
+
+    def ReadData(self):  # 从网络接收数据
+        recv_data = self.tcpSocket.readAll()
+        self.update_data(recv_data)
+
+    def ReadError(self, error: QAbstractSocket.SocketError):   # 网络错误处理
+        print('Error')
+        print(self.tcpSocket.errorString())
+        pass
+
+    def zoom_fit_action(self):  # 自适应显示数据
         if len(self.series_1.pointsVector()) > 0:
             chart1_x_min = self.series_1.pointsVector()[0].x()
             chart1_x_max = self.series_1.pointsVector()[-1].x()
@@ -448,10 +412,10 @@ class MainUi(QtWidgets.QMainWindow):
             print(f'{chart1_x_min} {chart1_x_max} {chart1_y_min} {chart1_y_max}')
             print(f'{chart2_x_min} {chart2_x_max} {chart2_y_min} {chart2_y_max}')
 
-            self.mag_min = 4096
-            self.mag_max = -4096
-            self.phase_min = 4096
-            self.phase_max = -4096
+            self.mag_min = 4096000
+            self.mag_max = -4096000
+            self.phase_min = 4096000
+            self.phase_max = -4096000
 
             self.chart_view1.update()
             self.chart_view2.update()
@@ -691,7 +655,7 @@ class MainUi(QtWidgets.QMainWindow):
             # data_abs = data_abs / 4096
             # data_phase = data_phase / 2048
 
-            self.update_range(data_abs, data_phase)
+            self.update_data_range(data_abs, data_phase)
             # self.data_to_show.put((data_abs, data_phase))
             point_1 = QPointF(self.count, data_abs)
             point_2 = QPointF(self.count, data_phase)
